@@ -122,7 +122,7 @@ fun GeneralSection() {
         )
         
         SettingItem(
-            icon = Icons.Default.Language,
+            icon = Icons.Default.Settings,
             title = "Idiomas",
             subtitle = "Español (predeterminado)",
             onClick = { }
