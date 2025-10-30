@@ -131,7 +131,7 @@ fun GeneralSection() {
         Spacer(modifier = Modifier.height(12.dp))
         
         SettingItem(
-            icon = Icons.Default.History,
+            icon = Icons.Default.Info,
             title = "Historial de actividades",
             subtitle = "Ver actividades recientes",
             onClick = { }
