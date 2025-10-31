@@ -84,7 +84,8 @@ fun SearchHeader() {
         },
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp),
+
+            .padding(horizontal = 16.dp , vertical = 10.dp),
         colors = OutlinedTextFieldDefaults.colors(
             focusedBorderColor = Color.Gray,
             unfocusedBorderColor = Color.Gray,
@@ -104,7 +105,8 @@ fun ImageCarousel() {
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .height(200.dp)
+            .width(300.dp)
+            .height(205.dp)
             .padding(horizontal = 16.dp)
     ) {
         HorizontalPager(
@@ -157,7 +159,7 @@ fun ImageCarousel() {
 fun TimeFilters() {
     LazyRow(
         horizontalArrangement = Arrangement.spacedBy(12.dp),
-        contentPadding = PaddingValues(horizontal = 16.dp)
+        contentPadding = PaddingValues(horizontal = 18.dp)
     ) {
         items(listOf("Naturaleza", "Exterior", "Interior", "Noche", "Tarde")) { filter ->
             FilterChip(
@@ -166,12 +168,15 @@ fun TimeFilters() {
                     Text(
                         filter,
                         color = Color.White,
+                        textAlign = TextAlign.Center,
+
                         fontSize = 14.sp
                     ) 
                 },
                 selected = false,
                 colors = FilterChipDefaults.filterChipColors(
                     containerColor = Color(0xFF2A2A2A),
+                    labelColor = Color.White,
                     selectedContainerColor = Color(0xFF4A4A4A)
                 )
             )
@@ -212,8 +217,8 @@ fun RecommendationCard(
 ) {
     Box(
         modifier = Modifier
-            .width(120.dp)
-            .height(160.dp)
+            .width(140.dp)
+            .height(295.dp)
             .clip(RoundedCornerShape(12.dp))
             .clickable { onClick() }
     ) {

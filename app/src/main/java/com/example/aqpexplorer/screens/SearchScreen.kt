@@ -74,7 +74,7 @@ fun SearchHeader(searchText: String, onSearchTextChange: (String) -> Unit) {
         },
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp),
+            .padding(horizontal = 16.dp , vertical = 10.dp),
         colors = OutlinedTextFieldDefaults.colors(
             focusedBorderColor = Color.Gray,
             unfocusedBorderColor = Color.Gray,
