@@ -821,19 +821,7 @@ data class TouristPlace(
 - [ ] Soporte para tablets
 - [ ] Accesibilidad mejorada
 
----
 
-## 👥 Contribuciones
-
-Este proyecto fue desarrollado como parte del curso de **Desarrollo de Aplicaciones Móviles**, demostrando la implementación práctica de los conceptos fundamentales de la plataforma Android y el diseño de interfaces de usuario modernas.
-
-### Autor
-- **Estudiante**: [Tu Nombre]
-- **Curso**: Desarrollo de Aplicaciones Móviles
-- **Institución**: [Tu Institución]
-- **Fecha**: 2024
-
----
 
 ## 📄 Licencia
 
