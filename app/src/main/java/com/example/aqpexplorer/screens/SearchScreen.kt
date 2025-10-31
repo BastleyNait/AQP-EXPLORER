@@ -8,10 +8,11 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -21,46 +22,117 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsState
 import androidx.navigation.NavHostController
 import coil.compose.AsyncImage
-import com.example.aqpexplorer.data.SampleData
-import com.example.aqpexplorer.data.TouristPlace
+import com.example.aqpexplorer.model.TouristPlace
+import com.example.aqpexplorer.model.UiState
+import com.example.aqpexplorer.viewmodel.SearchViewModel
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SearchScreen(navController: NavHostController) {
-    var searchText by remember { mutableStateOf("Arequipa") }
-    var selectedCategory by remember { mutableStateOf("Todos") }
+fun SearchScreen(
+    navController: NavHostController,
+    viewModel: SearchViewModel = hiltViewModel()
+) {
+    val uiState by viewModel.uiState.collectAsState()
     
     Column(
         modifier = Modifier
             .fillMaxSize()
             .background(Color(0xFF1A1A1A))
     ) {
-        // Header con búsqueda
-        SearchHeader(searchText) { searchText = it }
+        // Top App Bar con búsqueda
+        TopAppBar(
+            title = { },
+            navigationIcon = {
+                IconButton(onClick = { navController.popBackStack() }) {
+                    Icon(
+                        Icons.Default.ArrowBack,
+                        contentDescription = "Back",
+                        tint = Color.White
+                    )
+                }
+            },
+            colors = TopAppBarDefaults.topAppBarColors(
+                containerColor = Color(0xFF1A1A1A)
+            )
+        )
+        
+        // Barra de búsqueda
+        SearchBar(
+            query = uiState.query,
+            onQueryChange = viewModel::updateQuery,
+            onSearch = viewModel::search,
+            onClear = { viewModel.updateQuery("") }
+        )
         
         Spacer(modifier = Modifier.height(16.dp))
         
         // Filtros de categoría
-        CategoryFilters(selectedCategory) { selectedCategory = it }
+        CategoryFilters(
+            categories = uiState.categories,
+            selectedCategory = uiState.selectedCategory,
+            onCategorySelected = viewModel::selectCategory
+        )
         
         Spacer(modifier = Modifier.height(16.dp))
         
-        // Lista de lugares
-        PlacesList(navController)
+        // Contenido de búsqueda
+        when (uiState) {
+            is UiState.Loading -> {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    CircularProgressIndicator()
+                }
+            }
+            is UiState.Error -> {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = uiState.message,
+                        color = Color.Red,
+                        textAlign = TextAlign.Center
+                    )
+                }
+            }
+            is UiState.Success -> {
+                SearchResults(
+                    places = uiState.data.searchResults,
+                    onPlaceClick = { place ->
+                        navController.navigate("place_detail/${place.id}")
+                    },
+                    onFavoriteClick = { place ->
+                        viewModel.toggleFavorite(place.id)
+                    }
+                )
+            }
+        }
     }
 }
 
 @Composable
-fun SearchHeader(searchText: String, onSearchTextChange: (String) -> Unit) {
+fun SearchBar(
+    query: String,
+    onQueryChange: (String) -> Unit,
+    onSearch: () -> Unit,
+    onClear: () -> Unit
+) {
     OutlinedTextField(
-        value = searchText,
-        onValueChange = onSearchTextChange,
+        value = query,
+        onValueChange = onQueryChange,
         placeholder = { 
             Text(
-                "Arequipa", 
+                "Buscar lugares turísticos...", 
                 color = Color.Gray,
                 fontSize = 16.sp
             ) 
@@ -69,8 +141,19 @@ fun SearchHeader(searchText: String, onSearchTextChange: (String) -> Unit) {
             Icon(
                 Icons.Default.Search,
                 contentDescription = "Search",
-                tint = Color.White
+                tint = Color.Gray
             )
+        },
+        trailingIcon = {
+            if (query.isNotEmpty()) {
+                IconButton(onClick = onClear) {
+                    Icon(
+                        Icons.Default.Clear,
+                        contentDescription = "Clear",
+                        tint = Color.Gray
+                    )
+                }
+            }
         },
         modifier = Modifier
             .fillMaxWidth()
@@ -82,30 +165,35 @@ fun SearchHeader(searchText: String, onSearchTextChange: (String) -> Unit) {
             unfocusedTextColor = Color.White,
             cursorColor = Color.White
         ),
-        shape = RoundedCornerShape(25.dp)
+        shape = RoundedCornerShape(25.dp),
+        singleLine = true
     )
 }
 
 @Composable
-fun CategoryFilters(selectedCategory: String, onCategorySelected: (String) -> Unit) {
+fun CategoryFilters(
+    categories: List<String>,
+    selectedCategory: String,
+    onCategorySelected: (String) -> Unit
+) {
     LazyRow(
         horizontalArrangement = Arrangement.spacedBy(12.dp),
         contentPadding = PaddingValues(horizontal = 16.dp)
     ) {
-        items(SampleData.categories) { category ->
+        items(categories) { category ->
             FilterChip(
                 onClick = { onCategorySelected(category) },
                 label = { 
                     Text(
                         category,
-                        color = if (selectedCategory == category) Color.White else Color.Gray,
+                        color = if (selectedCategory == category) Color.Black else Color.White,
                         fontSize = 14.sp
                     ) 
                 },
                 selected = selectedCategory == category,
                 colors = FilterChipDefaults.filterChipColors(
                     containerColor = Color(0xFF2A2A2A),
-                    selectedContainerColor = Color(0xFF4A4A4A)
+                    selectedContainerColor = Color.White
                 )
             )
         }
@@ -113,30 +201,45 @@ fun CategoryFilters(selectedCategory: String, onCategorySelected: (String) -> Un
 }
 
 @Composable
-fun PlacesList(navController: NavHostController) {
-    LazyColumn(
-        verticalArrangement = Arrangement.spacedBy(16.dp),
-        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
-        modifier = Modifier.fillMaxSize()
-    ) {
-        items(SampleData.touristPlaces) { place ->
-            PlaceCard(
-                place = place,
-                onClick = { navController.navigate("place_detail/${place.id}") }
+fun SearchResults(
+    places: List<TouristPlace>,
+    onPlaceClick: (TouristPlace) -> Unit,
+    onFavoriteClick: (TouristPlace) -> Unit
+) {
+    if (places.isEmpty()) {
+        Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(
+                text = "No se encontraron lugares",
+                color = Color.Gray,
+                fontSize = 16.sp
             )
         }
-        
-        // Espacio para bottom navigation
-        item {
-            Spacer(modifier = Modifier.height(80.dp))
+    } else {
+        LazyColumn(
+            modifier = Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            items(places) { place ->
+                SearchResultCard(
+                    place = place,
+                    onClick = { onPlaceClick(place) },
+                    onFavoriteClick = { onFavoriteClick(place) }
+                )
+            }
         }
     }
 }
 
 @Composable
-fun PlaceCard(place: TouristPlace, onClick: () -> Unit) {
-    var isFavorite by remember { mutableStateOf(place.isFavorite) }
-    
+fun SearchResultCard(
+    place: TouristPlace,
+    onClick: () -> Unit,
+    onFavoriteClick: () -> Unit
+) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -164,78 +267,84 @@ fun PlaceCard(place: TouristPlace, onClick: () -> Unit) {
                         .clip(RoundedCornerShape(topStart = 12.dp, bottomStart = 12.dp)),
                     contentScale = ContentScale.Crop
                 )
+                
+                // Overlay gradient
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(
+                            Brush.horizontalGradient(
+                                colors = listOf(
+                                    Color.Transparent,
+                                    Color.Black.copy(alpha = 0.3f)
+                                )
+                            )
+                        )
+                )
             }
             
             // Contenido
             Column(
                 modifier = Modifier
-                    .weight(1f)
-                    .fillMaxHeight()
+                    .fillMaxSize()
                     .padding(12.dp),
                 verticalArrangement = Arrangement.SpaceBetween
             ) {
                 Column {
-                    Text(
-                        text = place.name,
-                        color = Color.White,
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.Bold
-                    )
-                    
-                    Spacer(modifier = Modifier.height(4.dp))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.Top
+                    ) {
+                        Text(
+                            text = place.name,
+                            color = Color.White,
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Bold,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.weight(1f)
+                        )
+                        
+                        IconButton(
+                            onClick = onFavoriteClick,
+                            modifier = Modifier.size(24.dp)
+                        ) {
+                            Icon(
+                                if (place.isFavorite) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
+                                contentDescription = "Favorite",
+                                tint = if (place.isFavorite) Color.Red else Color.Gray,
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
+                    }
                     
                     Text(
                         text = place.shortDescription,
                         color = Color.Gray,
                         fontSize = 12.sp,
-                        maxLines = 2
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis
                     )
                 }
                 
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
+                    verticalAlignment = Alignment.Bottom
                 ) {
-                    Column {
-                        Text(
-                            text = "Precio: ${place.currency} ${place.price}",
-                            color = Color.White,
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.Bold
-                        )
-                        Text(
-                            text = "Categorías: ${place.categories.joinToString(", ")}",
-                            color = Color.Gray,
-                            fontSize = 10.sp
-                        )
-                    }
+                    Text(
+                        text = "${place.currency}${place.price}",
+                        color = Color.White,
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Bold
+                    )
                     
-                    Row {
-                        IconButton(
-                            onClick = { /* Share */ },
-                            modifier = Modifier.size(24.dp)
-                        ) {
-                            Icon(
-                                Icons.Default.Share,
-                                contentDescription = "Share",
-                                tint = Color.Gray,
-                                modifier = Modifier.size(16.dp)
-                            )
-                        }
-                        
-                        IconButton(
-                            onClick = { isFavorite = !isFavorite },
-                            modifier = Modifier.size(24.dp)
-                        ) {
-                            Icon(
-                                if (isFavorite) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
-                                contentDescription = "Favorite",
-                                tint = if (isFavorite) Color.Red else Color.Gray,
-                                modifier = Modifier.size(16.dp)
-                            )
-                        }
-                    }
+                    Text(
+                        text = "⭐ ${place.rating}",
+                        color = Color.White,
+                        fontSize = 12.sp
+                    )
                 }
             }
         }
