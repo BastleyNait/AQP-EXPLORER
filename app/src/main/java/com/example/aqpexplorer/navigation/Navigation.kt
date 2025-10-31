@@ -89,9 +89,9 @@ fun BottomNavigationBar(
     Card(
         modifier = modifier
             .fillMaxWidth()
-            .padding(16.dp),
+            ,
         colors = CardDefaults.cardColors(containerColor = Color(0xFF2A2A2A)),
-        shape = RoundedCornerShape(24.dp),
+
         elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
     ) {
         Row(
