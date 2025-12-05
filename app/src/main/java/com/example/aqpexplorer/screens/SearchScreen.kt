@@ -17,7 +17,6 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
@@ -25,13 +24,15 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import coil.compose.AsyncImage
+import com.example.aqpexplorer.MainViewModel
 import com.example.aqpexplorer.data.SampleData
 import com.example.aqpexplorer.data.TouristPlace
 
 @Composable
-fun SearchScreen(navController: NavHostController) {
-    var searchText by remember { mutableStateOf("Arequipa") }
-    var selectedCategory by remember { mutableStateOf("Todos") }
+fun SearchScreen(navController: NavHostController, viewModel: MainViewModel) {
+    val searchText by viewModel.searchQuery.collectAsState()
+    val selectedCategory by viewModel.selectedCategory.collectAsState()
+    val searchResults by viewModel.searchResults.collectAsState()
     
     Column(
         modifier = Modifier
@@ -39,17 +40,17 @@ fun SearchScreen(navController: NavHostController) {
             .background(Color(0xFF1A1A1A))
     ) {
         // Header con búsqueda
-        SearchHeader(searchText) { searchText = it }
+        SearchHeader(searchText) { viewModel.onSearchQueryChange(it) }
         
         Spacer(modifier = Modifier.height(16.dp))
         
         // Filtros de categoría
-        CategoryFilters(selectedCategory) { selectedCategory = it }
+        CategoryFilters(selectedCategory) { viewModel.onCategoryChange(it) }
         
         Spacer(modifier = Modifier.height(16.dp))
         
         // Lista de lugares
-        PlacesList(navController)
+        PlacesList(navController, searchResults, viewModel)
     }
 }
 
@@ -113,16 +114,17 @@ fun CategoryFilters(selectedCategory: String, onCategorySelected: (String) -> Un
 }
 
 @Composable
-fun PlacesList(navController: NavHostController) {
+fun PlacesList(navController: NavHostController, places: List<TouristPlace>, viewModel: MainViewModel) {
     LazyColumn(
         verticalArrangement = Arrangement.spacedBy(16.dp),
         contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
         modifier = Modifier.fillMaxSize()
     ) {
-        items(SampleData.touristPlaces) { place ->
+        items(places) { place ->
             PlaceCard(
                 place = place,
-                onClick = { navController.navigate("place_detail/${place.id}") }
+                onClick = { navController.navigate("place_detail/${place.id}") },
+                viewModel = viewModel
             )
         }
         
@@ -134,8 +136,9 @@ fun PlacesList(navController: NavHostController) {
 }
 
 @Composable
-fun PlaceCard(place: TouristPlace, onClick: () -> Unit) {
-    var isFavorite by remember { mutableStateOf(place.isFavorite) }
+fun PlaceCard(place: TouristPlace, onClick: () -> Unit, viewModel: MainViewModel) {
+    val favoriteIds by viewModel.favoriteIds.collectAsState()
+    val isFavorite = favoriteIds.contains(place.id)
     
     Card(
         modifier = Modifier
@@ -225,7 +228,7 @@ fun PlaceCard(place: TouristPlace, onClick: () -> Unit) {
                         }
                         
                         IconButton(
-                            onClick = { isFavorite = !isFavorite },
+                            onClick = { viewModel.toggleFavorite(place.id) },
                             modifier = Modifier.size(24.dp)
                         ) {
                             Icon(

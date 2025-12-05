@@ -21,12 +21,15 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import coil.compose.AsyncImage
+import com.example.aqpexplorer.MainViewModel
 import com.example.aqpexplorer.data.SampleData
 import com.example.aqpexplorer.data.TouristPlace
 
 @Composable
-fun FavoritesScreen(navController: NavHostController) {
+fun FavoritesScreen(navController: NavHostController, viewModel: MainViewModel) {
     var selectedFilter by remember { mutableStateOf("Por Proximidad") }
+    val favoriteIds by viewModel.favoriteIds.collectAsState()
+    val favoritePlaces = SampleData.touristPlaces.filter { favoriteIds.contains(it.id) }
     
     Column(
         modifier = Modifier
@@ -44,7 +47,7 @@ fun FavoritesScreen(navController: NavHostController) {
         Spacer(modifier = Modifier.height(16.dp))
         
         // Lista de favoritos
-        FavoritesList(navController)
+        FavoritesList(navController, favoritePlaces, viewModel)
     }
 }
 
@@ -101,10 +104,7 @@ fun FavoriteFilters(selectedFilter: String, onFilterSelected: (String) -> Unit) 
 }
 
 @Composable
-fun FavoritesList(navController: NavHostController) {
-    // Simulamos que todos los lugares están en favoritos
-    val favoritePlaces = SampleData.touristPlaces
-    
+fun FavoritesList(navController: NavHostController, favoritePlaces: List<TouristPlace>, viewModel: MainViewModel) {
     LazyColumn(
         verticalArrangement = Arrangement.spacedBy(16.dp),
         contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
@@ -113,7 +113,8 @@ fun FavoritesList(navController: NavHostController) {
         items(favoritePlaces) { place ->
             FavoriteCard(
                 place = place,
-                onClick = { navController.navigate("place_detail/${place.id}") }
+                onClick = { navController.navigate("place_detail/${place.id}") },
+                onRemove = { viewModel.toggleFavorite(place.id) }
             )
         }
         
@@ -125,7 +126,7 @@ fun FavoritesList(navController: NavHostController) {
 }
 
 @Composable
-fun FavoriteCard(place: TouristPlace, onClick: () -> Unit) {
+fun FavoriteCard(place: TouristPlace, onClick: () -> Unit, onRemove: () -> Unit) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -214,7 +215,7 @@ fun FavoriteCard(place: TouristPlace, onClick: () -> Unit) {
                         }
                         
                         IconButton(
-                            onClick = { /* Remove from favorites */ },
+                            onClick = onRemove,
                             modifier = Modifier.size(24.dp)
                         ) {
                             Icon(

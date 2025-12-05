@@ -1,5 +1,7 @@
+
 package com.example.aqpexplorer.screens
 
+import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -18,19 +20,25 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import coil.compose.AsyncImage
+import com.example.aqpexplorer.MainViewModel
 import com.example.aqpexplorer.data.SampleData
 
 @Composable
-fun PlaceDetailScreen(placeId: Int, navController: NavHostController) {
+fun PlaceDetailScreen(placeId: Int, navController: NavHostController, viewModel: MainViewModel) {
     val place = SampleData.touristPlaces.find { it.id == placeId } 
         ?: SampleData.touristPlaces.first()
-    var isFavorite by remember { mutableStateOf(place.isFavorite) }
+    
+    val favoriteIds by viewModel.favoriteIds.collectAsState()
+    val isFavorite = favoriteIds.contains(place.id)
+    
     val scrollState = rememberScrollState()
+    val context = LocalContext.current
     
     Column(
         modifier = Modifier
@@ -82,7 +90,7 @@ fun PlaceDetailScreen(placeId: Int, navController: NavHostController) {
             
             // Favorite button
             IconButton(
-                onClick = { isFavorite = !isFavorite },
+                onClick = { viewModel.toggleFavorite(place.id) },
                 modifier = Modifier
                     .align(Alignment.TopEnd)
                     .padding(16.dp)
@@ -159,8 +167,8 @@ fun PlaceDetailScreen(placeId: Int, navController: NavHostController) {
                 lineHeight = 20.sp
             )
             
-            Spacer(modifier = Modifier.height(16.dp))
-            
+            Spacer(modifier = Modifier.height(24.dp))
+
             // Detalles Clave
             Text(
                 text = "Detalles Clave",
@@ -168,6 +176,40 @@ fun PlaceDetailScreen(placeId: Int, navController: NavHostController) {
                 fontSize = 18.sp,
                 fontWeight = FontWeight.Bold
             )
+            
+            Spacer(modifier = Modifier.height(8.dp))
+            
+            // Horarios
+            Text(
+                text = "Horarios de Atención:",
+                color = Color(0xFF007AFF),
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Bold
+            )
+            Text(
+                text = place.schedule,
+                color = Color.Gray,
+                fontSize = 14.sp
+            )
+            
+            Spacer(modifier = Modifier.height(8.dp))
+            
+            // Eventos
+            if (place.events.isNotEmpty()) {
+                Text(
+                    text = "Próximos Eventos:",
+                    color = Color(0xFF007AFF),
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Bold
+                )
+                place.events.forEach { event ->
+                    Text(
+                        text = "• $event",
+                        color = Color.Gray,
+                        fontSize = 14.sp
+                    )
+                }
+            }
             
             Spacer(modifier = Modifier.height(24.dp))
             
@@ -192,7 +234,9 @@ fun PlaceDetailScreen(placeId: Int, navController: NavHostController) {
                 }
                 
                 Button(
-                    onClick = { /* Reservar */ },
+                    onClick = { 
+                        navController.navigate("reservation_form/${place.id}")
+                    },
                     colors = ButtonDefaults.buttonColors(
                         containerColor = Color(0xFF007AFF)
                     ),

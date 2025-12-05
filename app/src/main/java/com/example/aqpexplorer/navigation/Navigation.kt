@@ -20,6 +20,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import com.example.aqpexplorer.screens.*
+import com.example.aqpexplorer.MainViewModel
 
 sealed class Screen(val route: String, val title: String, val icon: ImageVector) {
     object Home : Screen("home", "Inicio", Icons.Default.Home)
@@ -27,11 +28,15 @@ sealed class Screen(val route: String, val title: String, val icon: ImageVector)
     object Favorites : Screen("favorites", "Favoritos", Icons.Default.Favorite)
     object Settings : Screen("settings", "Config", Icons.Default.Settings)
     object PlaceDetail : Screen("place_detail/{placeId}", "Detalle", Icons.Default.Place)
+    object ReservationForm : Screen("reservation_form/{placeId}", "Reservar", Icons.Default.DateRange)
+    object Cart : Screen("cart", "Carrito", Icons.Default.ShoppingCart)
+    object Profile : Screen("profile", "Perfil", Icons.Default.Person)
 }
 
 @Composable
 fun MainNavigation(
     navController: NavHostController,
+    viewModel: MainViewModel,
     modifier: Modifier = Modifier
 ) {
     val navBackStackEntry by navController.currentBackStackEntryAsState()
@@ -47,22 +52,36 @@ fun MainNavigation(
                 HomeScreen(navController)
             }
             composable(Screen.Search.route) {
-                SearchScreen(navController)
+                SearchScreen(navController, viewModel)
             }
             composable(Screen.Favorites.route) {
-                FavoritesScreen(navController)
+                FavoritesScreen(navController, viewModel)
             }
             composable(Screen.Settings.route) {
                 SettingsScreen(navController)
             }
             composable(Screen.PlaceDetail.route) { backStackEntry ->
                 val placeId = backStackEntry.arguments?.getString("placeId")?.toIntOrNull() ?: 1
-                PlaceDetailScreen(placeId = placeId, navController = navController)
+                PlaceDetailScreen(placeId = placeId, navController = navController, viewModel = viewModel)
+            }
+            composable(Screen.ReservationForm.route) { backStackEntry ->
+                val placeId = backStackEntry.arguments?.getString("placeId")?.toIntOrNull() ?: 1
+                ReservationFormScreen(placeId = placeId, navController = navController, viewModel = viewModel)
+            }
+            composable(Screen.Cart.route) {
+                CartScreen(navController, viewModel)
+            }
+            composable(Screen.Profile.route) {
+                ProfileScreen(navController, viewModel)
             }
         }
         
-        // Solo mostrar bottom navigation si no estamos en la pantalla de detalle
-        if (currentRoute != null && !currentRoute.startsWith("place_detail")) {
+        // Solo mostrar bottom navigation si no estamos en la pantalla de detalle ni en el formulario de reserva
+        if (currentRoute != null && 
+            !currentRoute.startsWith("place_detail") && 
+            !currentRoute.startsWith("reservation_form") &&
+            currentRoute != Screen.Cart.route &&
+            currentRoute != Screen.Profile.route) {
             BottomNavigationBar(
                 navController = navController,
                 modifier = Modifier.align(Alignment.BottomCenter)
@@ -88,10 +107,8 @@ fun BottomNavigationBar(
     
     Card(
         modifier = modifier
-            .fillMaxWidth()
-            ,
+            .fillMaxWidth(),
         colors = CardDefaults.cardColors(containerColor = Color(0xFF2A2A2A)),
-
         elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
     ) {
         Row(
