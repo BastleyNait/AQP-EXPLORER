@@ -68,8 +68,8 @@ object SampleData {
     
     val timeOfDayRecommendations = listOf(
         TimeRecommendation(1, "Noche", "https://andinoperu.b-cdn.net/wp-content/uploads/2024/03/vista-volcan-misti-desde-arequipa.webp"),
-        TimeRecommendation(2, "Tarde", "https://andinoperu.b-cdn.net/wp-content/uploads/2024/01/atardecer-arequipa-guia-informativa-completa-arequipa-peru.webp"),
-        TimeRecommendation(3, "Día", "https://freewalkingtoursperu.com/wp-content/uploads/2024/02/como-llegar-canon-colca_3.webp")
+        TimeRecommendation(2, "Tarde", "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTu6SSelUXTwFFagVcZnKFVaSrF7sJiM3vClg&s"),
+        TimeRecommendation(3, "Día", "https://wp-content.miviaje.com/2019/12/plaza-armas-arequipa.jpg")
     )
     
     val carouselImages = listOf(
