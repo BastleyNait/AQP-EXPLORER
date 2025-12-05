@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "875853461306",
+    "project_id": "aqpexplorer",
+    "storage_bucket": "aqpexplorer.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:875853461306:android:529c88f1996c7bf93d0203",
+        "android_client_info": {
+          "package_name": "com.example.aqpexplorer"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCtgjGRBQhQ1CezZ_m6bbYbjJgEcKCzjKU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

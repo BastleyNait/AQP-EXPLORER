@@ -19,7 +19,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
@@ -29,6 +29,15 @@ import com.example.aqpexplorer.data.TimeRecommendation
 import com.google.accompanist.pager.ExperimentalPagerApi
 import com.google.accompanist.pager.HorizontalPager
 import com.google.accompanist.pager.rememberPagerState
+
+
+@OptIn(ExperimentalPagerApi::class)
+@Preview(showBackground = true, backgroundColor = 0xFF1A1A1A)
+@Composable
+fun PreviewHomeScreen() {
+    val navController = androidx.navigation.compose.rememberNavController()
+    HomeScreen(navController = navController)
+}
 
 @OptIn(ExperimentalPagerApi::class)
 @Composable
@@ -152,7 +161,6 @@ fun ImageCarousel() {
         }
     }
 }
-
 @Composable
 fun TimeFilters() {
     LazyRow(
