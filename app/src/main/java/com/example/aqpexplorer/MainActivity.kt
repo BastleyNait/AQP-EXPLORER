@@ -22,7 +22,7 @@ import com.example.aqpexplorer.data.FavoritesRepository // EL VIEJO
 import com.example.aqpexplorer.navigation.MainNavigation
 import com.example.aqpexplorer.ui.theme.AQPEXPLORERTheme
 import com.example.aqpexplorer.utils.NotificationHelper
-import com.example.aqpexplorer.workers.ReservationReminderWorker
+import com.example.aqpexplorer.core.ReservationReminderWorker
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch

@@ -1,4 +1,4 @@
-package com.example.aqpexplorer.workers
+package com.example.aqpexplorer.core
 
 import android.content.Context
 import android.util.Log

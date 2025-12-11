@@ -23,7 +23,7 @@ class ExplorerApplication : Application() {
         )
     }
 
-    // Repositorio de Reservas (AQUÍ LO INYECTAMOS)
+    // Repositorio de Reservas
     val reservationRepository by lazy {
         ReservationRepository(
             dao = database.reservationDao(),
