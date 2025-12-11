@@ -15,11 +15,13 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.navArgument
+import com.example.aqpexplorer.data.repository.TouristPlaceRepository
 import com.example.aqpexplorer.screens.*
 
 @Composable
 fun MainNavigation(
     navController: NavHostController,
+    repository: TouristPlaceRepository,
     modifier: Modifier = Modifier
 ) {
     Scaffold(
