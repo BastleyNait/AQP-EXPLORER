@@ -136,7 +136,6 @@ fun HomeScreen(
 
 @Composable
 fun ImageCarousel(places: List<TouristPlace>) {
-    // MIGRACIÓN: rememberPagerState moderno. Definimos el conteo aquí.
     val pagerState = rememberPagerState(pageCount = { places.size })
 
     Box(
@@ -163,7 +162,6 @@ fun ImageCarousel(places: List<TouristPlace>) {
                     contentScale = ContentScale.Crop
                 )
 
-                // Gradiente oscuro para leer el texto
                 Box(
                     modifier = Modifier
                         .fillMaxSize()

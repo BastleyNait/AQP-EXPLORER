@@ -20,11 +20,14 @@ import androidx.navigation.navArgument
 import com.example.aqpexplorer.data.repository.TouristPlaceRepository
 import com.example.aqpexplorer.presentation.screen.home.HomeScreen
 import com.example.aqpexplorer.presentation.screen.home.HomeViewModel
-import com.example.aqpexplorer.screens.SearchScreen // ELIMINAR
+import com.example.aqpexplorer.presentation.screen.search.SearchScreen
+import com.example.aqpexplorer.presentation.screen.search.SearchViewModel
+
 import com.example.aqpexplorer.screens.FavoritesScreen // ELIMINAR
 import com.example.aqpexplorer.screens.ReservationsScreen // ELIMINAR
 import com.example.aqpexplorer.screens.SettingsScreen // ELIMINAR
 import com.example.aqpexplorer.screens.PlaceDetailScreen // ELIMINAR
+
 
 @Composable
 fun MainNavigation(
@@ -51,21 +54,32 @@ fun MainNavigation(
                 )
                 HomeScreen(
                     viewModel = homeViewModel,
-
-                    // Navegación a Detalle
                     onNavigateToDetail = { placeId ->
                         navController.navigate("place_detail/$placeId")
                     },
-
-                    // Navegación a Configuración (NUEVO)
                     onNavigateToSettings = {
                         navController.navigate("settings")
                     }
                 )
             }
+            composable("search") {
+                val searchViewModel: SearchViewModel = viewModel(
+                    factory = viewModelFactory {
+                        initializer {
+                            SearchViewModel(repository)
+                        }
+                    }
+                )
+                SearchScreen(
+                    viewModel = searchViewModel,
+                    onNavigateToDetail = { placeId ->
+                        navController.navigate("place_detail/$placeId")
+                    }
+                )
+            }
             // --- RUTAS ANTIGUAS (LEGACY) ---
             //composable("home") { HomeScreen(navController) }
-            composable("search") { SearchScreen(navController) }
+            //composable("search") { SearchScreen(navController) }
             composable("favorites") { FavoritesScreen(navController) }
             composable("reservations") { ReservationsScreen(navController) }
             composable("settings") { SettingsScreen(navController) }
