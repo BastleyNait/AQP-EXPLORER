@@ -15,7 +15,8 @@ private val DarkColorScheme = darkColorScheme(
     surface = AqpSurface,
     onSurface = AqpTextWhite,
     onBackground = AqpTextWhite,
-    secondary = AqpIndicator
+    secondary = AqpIndicator,
+    tertiary = AqpGreen
 )
 
 @Composable

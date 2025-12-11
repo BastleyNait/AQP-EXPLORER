@@ -8,6 +8,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.lifecycle.viewmodel.initializer
+import androidx.lifecycle.viewmodel.viewModelFactory
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -15,8 +18,13 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.navArgument
 import com.example.aqpexplorer.data.repository.TouristPlaceRepository
-import com.example.aqpexplorer.screens.* // ELIMINAR
-
+import com.example.aqpexplorer.presentation.screen.home.HomeScreen
+import com.example.aqpexplorer.presentation.screen.home.HomeViewModel
+import com.example.aqpexplorer.screens.SearchScreen // ELIMINAR
+import com.example.aqpexplorer.screens.FavoritesScreen // ELIMINAR
+import com.example.aqpexplorer.screens.ReservationsScreen // ELIMINAR
+import com.example.aqpexplorer.screens.SettingsScreen // ELIMINAR
+import com.example.aqpexplorer.screens.PlaceDetailScreen // ELIMINAR
 
 @Composable
 fun MainNavigation(
@@ -33,8 +41,30 @@ fun MainNavigation(
             startDestination = "home",
             modifier = modifier.padding(paddingValues)
         ) {
+            composable("home") {
+                val homeViewModel: HomeViewModel = viewModel(
+                    factory = viewModelFactory {
+                        initializer {
+                            HomeViewModel(repository)
+                        }
+                    }
+                )
+                HomeScreen(
+                    viewModel = homeViewModel,
+
+                    // Navegación a Detalle
+                    onNavigateToDetail = { placeId ->
+                        navController.navigate("place_detail/$placeId")
+                    },
+
+                    // Navegación a Configuración (NUEVO)
+                    onNavigateToSettings = {
+                        navController.navigate("settings")
+                    }
+                )
+            }
             // --- RUTAS ANTIGUAS (LEGACY) ---
-            composable("home") { HomeScreen(navController) }
+            //composable("home") { HomeScreen(navController) }
             composable("search") { SearchScreen(navController) }
             composable("favorites") { FavoritesScreen(navController) }
             composable("reservations") { ReservationsScreen(navController) }
