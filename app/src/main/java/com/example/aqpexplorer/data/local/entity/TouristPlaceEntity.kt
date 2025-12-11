@@ -15,7 +15,6 @@ data class TouristPlaceEntity(
     val rating: Double,
     val isFavorite: Boolean,
 
-    // Estos campos complejos ahora se manejan gracias a los Converters
     val location: Map<String, Double>,
     val transportInfo: String,
     val localTips: List<String>,

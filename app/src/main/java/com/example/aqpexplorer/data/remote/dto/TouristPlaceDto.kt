@@ -1,8 +1,9 @@
 package com.example.aqpexplorer.data.remote.dto
 
 import com.example.aqpexplorer.data.local.entity.TouristPlaceEntity
+import com.google.firebase.firestore.PropertyName
 
-// DTO: Data Transfer Object (Espejo de Firebase)
+// DTO: Espejo exacto de lo que hay en la nube.
 data class TouristPlaceDto(
     val id: Int = 0,
     val name: String = "",
@@ -11,15 +12,17 @@ data class TouristPlaceDto(
     val categoria: String = "",
     val imagen: String = "",
     val rating: Double = 0.0,
-    val isFavorite: Boolean = false,
-    // Firestore soporta listas y mapas nativamente
+    @get:PropertyName("isFavorite")
+    @set:PropertyName("isFavorite")
+    var isFavorite: Boolean = false,
+
     val location: Map<String, Double> = emptyMap(),
     val transportInfo: String = "",
     val localTips: List<String> = emptyList(),
     val services: Map<String, Boolean> = emptyMap()
 )
 
-// Función de extensión para convertir DTO -> Entity de Room
+// Mapper: Convierte de Nube -> Local
 fun TouristPlaceDto.toEntity(): TouristPlaceEntity {
     return TouristPlaceEntity(
         id = id,

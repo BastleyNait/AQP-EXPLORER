@@ -1,5 +1,5 @@
 package com.example.aqpexplorer.data
-
+// ELIMINAR NO SE USA
 data class AppSettings(
     val dailyNotifications: Boolean = false,
     val travelAlerts: Boolean = true,
