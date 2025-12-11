@@ -18,11 +18,11 @@ import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.navigation.compose.rememberNavController
 import androidx.work.*
-import com.example.aqpexplorer.data.FavoritesRepository // EL VIEJO
-import com.example.aqpexplorer.navigation.MainNavigation
-import com.example.aqpexplorer.ui.theme.AQPEXPLORERTheme
+import com.example.aqpexplorer.data.FavoritesRepository // ELIMINAR
+import com.example.aqpexplorer.presentation.navigation.MainNavigation
 import com.example.aqpexplorer.utils.NotificationHelper
 import com.example.aqpexplorer.core.ReservationReminderWorker
+import com.example.aqpexplorer.presentation.theme.AQPEXPLORERTheme
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -39,8 +39,8 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
-        // LEGACY
+        enableEdgeToEdge()
+        // LEGACY (ELIMINAR)
         FavoritesRepository.init(this)
         CoroutineScope(Dispatchers.IO).launch { FavoritesRepository.syncWithFirebase() }
 

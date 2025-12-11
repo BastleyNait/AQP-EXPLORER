@@ -1,4 +1,4 @@
-package com.example.aqpexplorer.navigation
+package com.example.aqpexplorer.presentation.navigation
 
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
@@ -7,7 +7,6 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
@@ -16,27 +15,29 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.navArgument
 import com.example.aqpexplorer.data.repository.TouristPlaceRepository
-import com.example.aqpexplorer.screens.*
+import com.example.aqpexplorer.screens.* // ELIMINAR
+
 
 @Composable
 fun MainNavigation(
     navController: NavHostController,
-    repository: TouristPlaceRepository,
+    repository: TouristPlaceRepository, // Recibimos el repo aunque aún no lo uses en las viejas
     modifier: Modifier = Modifier
 ) {
     Scaffold(
         bottomBar = { BottomNavigationBar(navController) },
-        containerColor = Color(0xFF1A1A1A)
+        containerColor = MaterialTheme.colorScheme.background
     ) { paddingValues ->
         NavHost(
             navController = navController,
             startDestination = "home",
             modifier = modifier.padding(paddingValues)
         ) {
+            // --- RUTAS ANTIGUAS (LEGACY) ---
             composable("home") { HomeScreen(navController) }
             composable("search") { SearchScreen(navController) }
             composable("favorites") { FavoritesScreen(navController) }
-            composable("reservations") { ReservationsScreen(navController) } // NUEVA PANTALLA
+            composable("reservations") { ReservationsScreen(navController) }
             composable("settings") { SettingsScreen(navController) }
 
             composable(
@@ -55,41 +56,47 @@ fun BottomNavigationBar(navController: NavHostController) {
     val items = listOf(
         BottomNavItem("home", "Inicio", Icons.Default.Home),
         BottomNavItem("search", "Buscar", Icons.Default.Search),
-        BottomNavItem("reservations", "Reservas", Icons.Default.DateRange), // NUEVO
+        BottomNavItem("reservations", "Reservas", Icons.Default.DateRange),
         BottomNavItem("favorites", "Favoritos", Icons.Default.Favorite),
     )
 
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
 
+    // Colores obtenidos del Tema
+    val barColor = MaterialTheme.colorScheme.surface // 0xFF2A2A2A
+    val selectedColor = MaterialTheme.colorScheme.primary // 0xFF007AFF
+    val indicatorColor = MaterialTheme.colorScheme.secondary // 0xFF3A3A3A
+    val unselectedColor = com.example.aqpexplorer.presentation.theme.AqpGray
+
     NavigationBar(
-        containerColor = Color(0xFF2A2A2A),
-        contentColor = Color.White
+        containerColor = barColor,
+        contentColor = MaterialTheme.colorScheme.onSurface
     ) {
         items.forEach { item ->
-                NavigationBarItem(
-                    icon = { Icon(item.icon, contentDescription = item.title) },
-                    label = { Text(item.title) },
-                    selected = currentRoute?.startsWith(item.route) == true,
-                    onClick = {
-                        if (currentRoute != item.route) {
-                            navController.navigate(item.route) {
-                                popUpTo(navController.graph.startDestinationId) {
-                                    saveState = false
-                                }
-                                launchSingleTop = true
-                                restoreState = true
+            NavigationBarItem(
+                icon = { Icon(item.icon, contentDescription = item.title) },
+                label = { Text(item.title) },
+                selected = currentRoute?.startsWith(item.route) == true,
+                onClick = {
+                    if (currentRoute != item.route) {
+                        navController.navigate(item.route) {
+                            popUpTo(navController.graph.startDestinationId) {
+                                saveState = false
                             }
+                            launchSingleTop = true
+                            restoreState = true
                         }
-                    },
-                    colors = NavigationBarItemDefaults.colors(
-                        selectedIconColor = Color(0xFF007AFF),
-                        selectedTextColor = Color(0xFF007AFF),
-                        unselectedIconColor = Color.Gray,
-                        unselectedTextColor = Color.Gray,
-                        indicatorColor = Color(0xFF3A3A3A)
-                    )
+                    }
+                },
+                colors = NavigationBarItemDefaults.colors(
+                    selectedIconColor = selectedColor,
+                    selectedTextColor = selectedColor,
+                    unselectedIconColor = unselectedColor,
+                    unselectedTextColor = unselectedColor,
+                    indicatorColor = indicatorColor
                 )
+            )
         }
     }
 }

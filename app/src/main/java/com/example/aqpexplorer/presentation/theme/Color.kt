@@ -1,11 +1,11 @@
-package com.example.aqpexplorer.ui.theme
+package com.example.aqpexplorer.presentation.theme
 
 import androidx.compose.ui.graphics.Color
 
-val Purple80 = Color(0xFFD0BCFF)
-val PurpleGrey80 = Color(0xFFCCC2DC)
-val Pink80 = Color(0xFFEFB8C8)
-
-val Purple40 = Color(0xFF6650a4)
-val PurpleGrey40 = Color(0xFF625b71)
-val Pink40 = Color(0xFF7D5260)
+// Tus colores base (Extraídos de tu código anterior)
+val AqpDarkBackground = Color(0xFF1A1A1A) // El fondo principal oscuro
+val AqpSurface      = Color(0xFF2A2A2A)   // El fondo de la barra de navegación
+val AqpIndicator    = Color(0xFF3A3A3A)   // El círculo indicador de selección
+val AqpPrimary      = Color(0xFF007AFF)   // El Azul eléctrico (Selected)
+val AqpTextWhite    = Color(0xFFEEEEEE)   // Blanco suave para textos
+val AqpGray         = Color.Gray          // Para íconos no seleccionados
