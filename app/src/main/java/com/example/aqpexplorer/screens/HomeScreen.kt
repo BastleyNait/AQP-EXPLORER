@@ -1,15 +1,19 @@
 package com.example.aqpexplorer.screens
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Settings
+
+import com.example.aqpexplorer.R
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -17,99 +21,101 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.layout.ModifierLocalBeyondBoundsLayout
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import coil.compose.AsyncImage
-import com.example.aqpexplorer.data.SampleData
-import com.example.aqpexplorer.data.TimeRecommendation
+import com.example.aqpexplorer.data.TouristPlace
+import com.example.aqpexplorer.viewmodel.HomeViewModel
 import com.google.accompanist.pager.ExperimentalPagerApi
 import com.google.accompanist.pager.HorizontalPager
 import com.google.accompanist.pager.rememberPagerState
 
-
-@OptIn(ExperimentalPagerApi::class)
-@Preview(showBackground = true, backgroundColor = 0xFF1A1A1A)
-@Composable
-fun PreviewHomeScreen() {
-    val navController = androidx.navigation.compose.rememberNavController()
-    HomeScreen(navController = navController)
-}
-
 @OptIn(ExperimentalPagerApi::class)
 @Composable
-fun HomeScreen(navController: NavHostController) {
+fun HomeScreen(
+    navController: NavHostController,
+    viewModel: HomeViewModel = viewModel()
+) {
     val scrollState = rememberScrollState()
-    
+    val places by viewModel.uiState.collectAsState()
+    val isLoading by viewModel.isLoading.collectAsState()
+    val selectedCategory by viewModel.selectedCategory.collectAsState() // AHORA SÍ SE USA
+
     Column(
         modifier = Modifier
             .fillMaxSize()
             .background(Color(0xFF1A1A1A))
-            .verticalScroll(scrollState)
     ) {
-        // Header con búsqueda
-        SearchHeader()
-        
-        Spacer(modifier = Modifier.height(16.dp))
-        
-        // Carrusel de imágenes
-        ImageCarousel()
-        
-        Spacer(modifier = Modifier.height(24.dp))
-        
-        // Filtros de tiempo
-        TimeFilters()
-        
-        Spacer(modifier = Modifier.height(24.dp))
-        
-        // Recomendaciones
-        RecommendationsSection(navController)
-        
-        Spacer(modifier = Modifier.height(100.dp)) // Espacio para bottom navigation
-    }
-}
+        if (isLoading) {
+            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                CircularProgressIndicator(color = Color.White)
+            }
+        } else {
+            Column(modifier = Modifier.verticalScroll(scrollState)) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp), // Un poco más de aire arriba/abajo
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Image(
+                        painter = painterResource(R.drawable.logo),
+                        contentDescription = "Logo",
+                        // CAMBIO CLAVE AQUÍ:
+                        modifier = Modifier
+                            .height(80.dp) // Altura fija de cabecera (entre 50 y 70dp es estándar)
+                            .widthIn(max = 200.dp), // Opcional: limita el ancho máximo si es necesario
+                        contentScale = ContentScale.Fit, // Mantiene la proporción sin deformar
+                        alignment = Alignment.CenterStart // Asegura que se pegue a la izquierda
+                    )
 
-@Composable
-fun SearchHeader() {
-    OutlinedTextField(
-        value = "",
-        onValueChange = { },
-        placeholder = { 
-            Text(
-                "Hinted search text", 
-                color = Color.Gray,
-                fontSize = 16.sp
-            ) 
-        },
-        leadingIcon = {
-            Icon(
-                Icons.Default.Search,
-                contentDescription = "Search",
-                tint = Color.Gray
-            )
-        },
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp),
-        colors = OutlinedTextFieldDefaults.colors(
-            focusedBorderColor = Color.Gray,
-            unfocusedBorderColor = Color.Gray,
-            focusedTextColor = Color.White,
-            unfocusedTextColor = Color.White,
-            cursorColor = Color.White
-        ),
-        shape = RoundedCornerShape(25.dp)
-    )
+                    IconButton(
+                        onClick = { navController.navigate("settings") }
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.Settings,
+                            contentDescription = "configuraciones",
+                            modifier = Modifier.size(28.dp), // Ligeramente ajustado para elegancia
+                            tint = Color.White // Asegura que se vea sobre fondo oscuro
+                        )
+                    }
+                }
+
+                if (places.isNotEmpty()) {
+                    ImageCarousel(places.take(5))
+                }
+
+                Spacer(modifier = Modifier.height(24.dp))
+
+                // FILTROS AHORA FUNCIONAN
+                TimeFilters(selectedCategory) { category ->
+                    viewModel.onCategorySelected(category)
+                }
+
+                Spacer(modifier = Modifier.height(24.dp))
+
+                RecommendationsSection(places, navController)
+
+                Spacer(modifier = Modifier.height(100.dp))
+            }
+        }
+    }
 }
 
 @OptIn(ExperimentalPagerApi::class)
 @Composable
-fun ImageCarousel() {
+fun ImageCarousel(places: List<TouristPlace>) {
     val pagerState = rememberPagerState()
-    
+
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -117,39 +123,31 @@ fun ImageCarousel() {
             .padding(horizontal = 16.dp)
     ) {
         HorizontalPager(
-            count = SampleData.carouselImages.size,
+            count = places.size,
             state = pagerState,
             modifier = Modifier.fillMaxSize()
         ) { page ->
+            val place = places[page]
             Box(
                 modifier = Modifier
                     .fillMaxSize()
                     .clip(RoundedCornerShape(16.dp))
             ) {
                 AsyncImage(
-                    model = SampleData.carouselImages[page],
-                    contentDescription = "Carousel image",
+                    model = place.imagen,
+                    contentDescription = place.name,
                     modifier = Modifier.fillMaxSize(),
                     contentScale = ContentScale.Crop
                 )
-                
-                // Overlay gradient
+
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
-                        .background(
-                            Brush.verticalGradient(
-                                colors = listOf(
-                                    Color.Transparent,
-                                    Color.Black.copy(alpha = 0.7f)
-                                )
-                            )
-                        )
+                        .background(Brush.verticalGradient(colors = listOf(Color.Transparent, Color.Black.copy(alpha = 0.7f))))
                 )
-                
-                // Text overlay
+
                 Text(
-                    text = "Carrusel de imágenes",
+                    text = place.name,
                     color = Color.White,
                     fontSize = 18.sp,
                     fontWeight = FontWeight.Bold,
@@ -161,23 +159,25 @@ fun ImageCarousel() {
         }
     }
 }
+
+// AHORA RECIBE selectedCategory Y onCategorySelected
 @Composable
-fun TimeFilters() {
+fun TimeFilters(selectedCategory: String, onCategorySelected: (String) -> Unit) {
     LazyRow(
         horizontalArrangement = Arrangement.spacedBy(12.dp),
         contentPadding = PaddingValues(horizontal = 16.dp)
     ) {
-        items(listOf("Naturaleza", "Exterior", "Interior", "Noche", "Tarde")) { filter ->
+        items(listOf("Todos", "Histórico", "Aventura", "Naturaleza", "Cultural", "Urbano")) { filter ->
             FilterChip(
-                onClick = { },
-                label = { 
+                onClick = { onCategorySelected(filter) },
+                label = {
                     Text(
                         filter,
-                        color = Color.White,
+                        color = if (selectedCategory == filter) Color.White else Color.Gray,
                         fontSize = 14.sp
-                    ) 
+                    )
                 },
-                selected = false,
+                selected = selectedCategory == filter,
                 colors = FilterChipDefaults.filterChipColors(
                     containerColor = Color(0xFF2A2A2A),
                     selectedContainerColor = Color(0xFF4A4A4A)
@@ -188,25 +188,23 @@ fun TimeFilters() {
 }
 
 @Composable
-fun RecommendationsSection(navController: NavHostController) {
-    Column(
-        modifier = Modifier.padding(horizontal = 16.dp)
-    ) {
+fun RecommendationsSection(places: List<TouristPlace>, navController: NavHostController) {
+    Column(modifier = Modifier.padding(horizontal = 16.dp)) {
         Text(
-            text = "Recomendaciones",
+            text = "Destinos Populares",
             color = Color.White,
             fontSize = 20.sp,
             fontWeight = FontWeight.Bold,
             modifier = Modifier.padding(bottom = 16.dp)
         )
-        
-        LazyRow(
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            items(SampleData.timeOfDayRecommendations) { recommendation ->
+
+        LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            items(places) { place ->
                 RecommendationCard(
-                    recommendation = recommendation,
-                    onClick = { navController.navigate("place_detail/${recommendation.id}") }
+                    place = place,
+                    onClick = {
+                        navController.navigate("place_detail/${place.id}")
+                    }
                 )
             }
         }
@@ -214,45 +212,45 @@ fun RecommendationsSection(navController: NavHostController) {
 }
 
 @Composable
-fun RecommendationCard(
-    recommendation: TimeRecommendation,
-    onClick: () -> Unit
-) {
+fun RecommendationCard(place: TouristPlace, onClick: () -> Unit) {
     Box(
         modifier = Modifier
-            .width(120.dp)
-            .height(160.dp)
+            .width(140.dp)
+            .height(180.dp)
             .clip(RoundedCornerShape(12.dp))
             .clickable { onClick() }
     ) {
         AsyncImage(
-            model = recommendation.imageUrl,
-            contentDescription = recommendation.timeOfDay,
+            model = place.imagen,
+            contentDescription = place.name,
             modifier = Modifier.fillMaxSize(),
             contentScale = ContentScale.Crop
         )
-        
+
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(
-                    Brush.verticalGradient(
-                        colors = listOf(
-                            Color.Transparent,
-                            Color.Black.copy(alpha = 0.7f)
-                        )
-                    )
-                )
+                .background(Brush.verticalGradient(colors = listOf(Color.Transparent, Color.Black.copy(alpha = 0.8f))))
         )
-        
-        Text(
-            text = recommendation.timeOfDay,
-            color = Color.White,
-            fontSize = 14.sp,
-            fontWeight = FontWeight.Medium,
+
+        Column(
             modifier = Modifier
                 .align(Alignment.BottomStart)
                 .padding(12.dp)
-        )
+        ) {
+            Text(
+                text = place.name,
+                color = Color.White,
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Medium,
+                maxLines = 2
+            )
+            Text(
+                text = "S/ ${place.precio}",
+                color = Color(0xFF4CAF50),
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Bold
+            )
+        }
     }
 }

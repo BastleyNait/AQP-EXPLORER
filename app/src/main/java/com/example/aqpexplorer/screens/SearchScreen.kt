@@ -17,39 +17,40 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import coil.compose.AsyncImage
-import com.example.aqpexplorer.data.SampleData
 import com.example.aqpexplorer.data.TouristPlace
+import com.example.aqpexplorer.viewmodel.SearchViewModel
 
 @Composable
-fun SearchScreen(navController: NavHostController) {
-    var searchText by remember { mutableStateOf("Arequipa") }
-    var selectedCategory by remember { mutableStateOf("Todos") }
-    
+fun SearchScreen(
+    navController: NavHostController,
+    viewModel: SearchViewModel = viewModel()
+) {
+    // Observamos estados del ViewModel
+    val searchText by viewModel.searchText.collectAsState()
+    val selectedCategory by viewModel.selectedCategory.collectAsState()
+    val filteredPlaces by viewModel.filteredPlaces.collectAsState()
+
+    // Lista estática de categorías (podrías sacarla de firebase también si quisieras)
+    val categories = listOf("Todos", "Histórico", "Naturaleza", "Aventura", "Cultural", "Urbano")
+
     Column(
         modifier = Modifier
             .fillMaxSize()
             .background(Color(0xFF1A1A1A))
     ) {
-        // Header con búsqueda
-        SearchHeader(searchText) { searchText = it }
-        
+        SearchHeader(searchText) { viewModel.onSearchTextChange(it) }
         Spacer(modifier = Modifier.height(16.dp))
-        
-        // Filtros de categoría
-        CategoryFilters(selectedCategory) { selectedCategory = it }
-        
+        CategoryFilters(categories, selectedCategory) { viewModel.onCategorySelected(it) }
         Spacer(modifier = Modifier.height(16.dp))
-        
-        // Lista de lugares
-        PlacesList(navController)
+        PlacesList(navController, filteredPlaces)
     }
 }
 
@@ -58,23 +59,9 @@ fun SearchHeader(searchText: String, onSearchTextChange: (String) -> Unit) {
     OutlinedTextField(
         value = searchText,
         onValueChange = onSearchTextChange,
-        placeholder = { 
-            Text(
-                "Arequipa", 
-                color = Color.Gray,
-                fontSize = 16.sp
-            ) 
-        },
-        leadingIcon = {
-            Icon(
-                Icons.Default.Search,
-                contentDescription = "Search",
-                tint = Color.White
-            )
-        },
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp),
+        placeholder = { Text("Buscar en Arequipa...", color = Color.Gray, fontSize = 16.sp) },
+        leadingIcon = { Icon(Icons.Default.Search, "Search", tint = Color.White) },
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
         colors = OutlinedTextFieldDefaults.colors(
             focusedBorderColor = Color.Gray,
             unfocusedBorderColor = Color.Gray,
@@ -87,20 +74,20 @@ fun SearchHeader(searchText: String, onSearchTextChange: (String) -> Unit) {
 }
 
 @Composable
-fun CategoryFilters(selectedCategory: String, onCategorySelected: (String) -> Unit) {
+fun CategoryFilters(categories: List<String>, selectedCategory: String, onCategorySelected: (String) -> Unit) {
     LazyRow(
         horizontalArrangement = Arrangement.spacedBy(12.dp),
         contentPadding = PaddingValues(horizontal = 16.dp)
     ) {
-        items(SampleData.categories) { category ->
+        items(categories) { category ->
             FilterChip(
                 onClick = { onCategorySelected(category) },
-                label = { 
+                label = {
                     Text(
                         category,
                         color = if (selectedCategory == category) Color.White else Color.Gray,
                         fontSize = 14.sp
-                    ) 
+                    )
                 },
                 selected = selectedCategory == category,
                 colors = FilterChipDefaults.filterChipColors(
@@ -113,125 +100,77 @@ fun CategoryFilters(selectedCategory: String, onCategorySelected: (String) -> Un
 }
 
 @Composable
-fun PlacesList(navController: NavHostController) {
+fun PlacesList(navController: NavHostController, places: List<TouristPlace>) {
     LazyColumn(
         verticalArrangement = Arrangement.spacedBy(16.dp),
         contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
         modifier = Modifier.fillMaxSize()
     ) {
-        items(SampleData.touristPlaces) { place ->
+        items(places) { place ->
             PlaceCard(
                 place = place,
                 onClick = { navController.navigate("place_detail/${place.id}") }
             )
         }
-        
-        // Espacio para bottom navigation
-        item {
-            Spacer(modifier = Modifier.height(80.dp))
-        }
+        item { Spacer(modifier = Modifier.height(80.dp)) }
     }
 }
 
 @Composable
 fun PlaceCard(place: TouristPlace, onClick: () -> Unit) {
-    var isFavorite by remember { mutableStateOf(place.isFavorite) }
-    
+    // Nota: El estado de favorito aquí es solo visual local,
+    // para persistirlo necesitarías pasarle un evento al ViewModel
+    var isFavoriteLocal by remember { mutableStateOf(place.isFavorite) }
+
     Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(120.dp)
-            .clickable { onClick() },
-        colors = CardDefaults.cardColors(
-            containerColor = Color(0xFF2A2A2A)
-        ),
+        modifier = Modifier.fillMaxWidth().height(120.dp).clickable { onClick() },
+        colors = CardDefaults.cardColors(containerColor = Color(0xFF2A2A2A)),
         shape = RoundedCornerShape(12.dp)
     ) {
-        Row(
-            modifier = Modifier.fillMaxSize()
-        ) {
-            // Imagen
-            Box(
-                modifier = Modifier
-                    .width(120.dp)
-                    .fillMaxHeight()
-            ) {
+        Row(modifier = Modifier.fillMaxSize()) {
+            Box(modifier = Modifier.width(120.dp).fillMaxHeight()) {
                 AsyncImage(
-                    model = place.imageUrl,
+                    model = place.imagen,
                     contentDescription = place.name,
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .clip(RoundedCornerShape(topStart = 12.dp, bottomStart = 12.dp)),
+                    modifier = Modifier.fillMaxSize().clip(RoundedCornerShape(topStart = 12.dp, bottomStart = 12.dp)),
                     contentScale = ContentScale.Crop
                 )
             }
-            
-            // Contenido
+
             Column(
-                modifier = Modifier
-                    .weight(1f)
-                    .fillMaxHeight()
-                    .padding(12.dp),
+                modifier = Modifier.weight(1f).fillMaxHeight().padding(12.dp),
                 verticalArrangement = Arrangement.SpaceBetween
             ) {
                 Column {
-                    Text(
-                        text = place.name,
-                        color = Color.White,
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.Bold
-                    )
-                    
+                    Text(place.name, color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold)
                     Spacer(modifier = Modifier.height(4.dp))
-                    
                     Text(
-                        text = place.shortDescription,
+                        text = place.description.take(50) + "...", // Descripción corta simulada
                         color = Color.Gray,
                         fontSize = 12.sp,
                         maxLines = 2
                     )
                 }
-                
+
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Column {
-                        Text(
-                            text = "Precio: ${place.currency} ${place.price}",
-                            color = Color.White,
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.Bold
-                        )
-                        Text(
-                            text = "Categorías: ${place.categories.joinToString(", ")}",
-                            color = Color.Gray,
-                            fontSize = 10.sp
-                        )
+                        Text("Precio: S/ ${place.precio}", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                        Text("Cat: ${place.categoria}", color = Color.Gray, fontSize = 10.sp)
                     }
-                    
+
                     Row {
-                        IconButton(
-                            onClick = { /* Share */ },
-                            modifier = Modifier.size(24.dp)
-                        ) {
-                            Icon(
-                                Icons.Default.Share,
-                                contentDescription = "Share",
-                                tint = Color.Gray,
-                                modifier = Modifier.size(16.dp)
-                            )
+                        IconButton(onClick = { }, modifier = Modifier.size(24.dp)) {
+                            Icon(Icons.Default.Share, "Share", tint = Color.Gray, modifier = Modifier.size(16.dp))
                         }
-                        
-                        IconButton(
-                            onClick = { isFavorite = !isFavorite },
-                            modifier = Modifier.size(24.dp)
-                        ) {
+                        IconButton(onClick = { isFavoriteLocal = !isFavoriteLocal }, modifier = Modifier.size(24.dp)) {
                             Icon(
-                                if (isFavorite) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
-                                contentDescription = "Favorite",
-                                tint = if (isFavorite) Color.Red else Color.Gray,
+                                if (isFavoriteLocal) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
+                                "Favorite",
+                                tint = if (isFavoriteLocal) Color.Red else Color.Gray,
                                 modifier = Modifier.size(16.dp)
                             )
                         }

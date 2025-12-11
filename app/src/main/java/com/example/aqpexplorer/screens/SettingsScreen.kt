@@ -28,6 +28,16 @@ fun SettingsScreen(navController: NavHostController) {
             .background(Color(0xFF1A1A1A))
             .verticalScroll(scrollState)
     ) {
+        IconButton(
+            onClick = { navController.navigate("home") }
+        ) {
+            Icon(
+                imageVector = Icons.Filled.ArrowBack,
+                contentDescription = "Volver",
+                tint = Color.White,
+                modifier = Modifier.size(24.dp)
+            )
+        }
         // Header
         SettingsHeader()
         
