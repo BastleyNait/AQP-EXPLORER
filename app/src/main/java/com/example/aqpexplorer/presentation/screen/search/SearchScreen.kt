@@ -1,36 +1,28 @@
 package com.example.aqpexplorer.presentation.screen.search
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Favorite
-import androidx.compose.material.icons.filled.FavoriteBorder
-import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.filled.Share
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import coil.compose.AsyncImage
 import com.example.aqpexplorer.data.TouristPlace
+// Importamos tu componente reutilizable
+import com.example.aqpexplorer.presentation.components.PlaceListCard
 
 @Composable
 fun SearchScreen(
     viewModel: SearchViewModel,
     onNavigateToDetail: (Int) -> Unit
 ) {
-    // Observamos estados del ViewModel
     val searchText by viewModel.searchText.collectAsState()
     val selectedCategory by viewModel.selectedCategory.collectAsState()
     val filteredPlaces by viewModel.filteredPlaces.collectAsState()
@@ -40,26 +32,52 @@ fun SearchScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            // USO DE TEMA: Background dinámico
             .background(MaterialTheme.colorScheme.background)
     ) {
-        // --- BARRA DE BÚSQUEDA ---
         Spacer(modifier = Modifier.height(16.dp))
+
+        // Header Búsqueda
         SearchHeader(searchText) { viewModel.onSearchTextChange(it) }
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // --- FILTROS ---
+        // Filtros
         CategoryFilters(categories, selectedCategory) { viewModel.onCategorySelected(it) }
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // --- LISTA DE RESULTADOS ---
-        PlacesList(
-            places = filteredPlaces,
-            onNavigateToDetail = onNavigateToDetail,
-            onToggleFavorite = { place -> viewModel.toggleFavorite(place) }
-        )
+        // Lista Reutilizando Componente
+        LazyColumn(
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+            modifier = Modifier.fillMaxSize()
+        ) {
+            items(filteredPlaces, key = { it.id }) { place ->
+                PlaceListCard(
+                    place = place,
+                    onClick = { onNavigateToDetail(place.id) },
+                    actions = {
+                        // BOTONES ESPECÍFICOS DE BÚSQUEDA
+
+                        // Compartir
+                        IconButton(onClick = { /* Share Logic */ }, modifier = Modifier.size(32.dp)) {
+                            Icon(Icons.Default.Share, "Share", tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(18.dp))
+                        }
+
+                        // Favorito (Corazón)
+                        IconButton(onClick = { viewModel.toggleFavorite(place) }, modifier = Modifier.size(32.dp)) {
+                            Icon(
+                                imageVector = if (place.isFavorite) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
+                                contentDescription = "Favorite",
+                                tint = if (place.isFavorite) Color.Red else MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
+                    }
+                )
+            }
+            item { Spacer(modifier = Modifier.height(80.dp)) }
+        }
     }
 }
 
@@ -69,28 +87,15 @@ fun SearchHeader(searchText: String, onSearchTextChange: (String) -> Unit) {
         value = searchText,
         onValueChange = onSearchTextChange,
         placeholder = {
-            Text(
-                "Buscar en Arequipa...",
-                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
-                fontSize = 16.sp
-            )
+            Text("Buscar...", color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f))
         },
-        leadingIcon = {
-            Icon(
-                Icons.Default.Search,
-                contentDescription = "Search",
-                tint = MaterialTheme.colorScheme.onSurface
-            )
-        },
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp),
+        leadingIcon = { Icon(Icons.Default.Search, null, tint = MaterialTheme.colorScheme.onSurface) },
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
         colors = OutlinedTextFieldDefaults.colors(
             focusedBorderColor = MaterialTheme.colorScheme.primary,
             unfocusedBorderColor = MaterialTheme.colorScheme.outline,
             focusedTextColor = MaterialTheme.colorScheme.onSurface,
-            unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
-            cursorColor = MaterialTheme.colorScheme.primary
+            unfocusedTextColor = MaterialTheme.colorScheme.onSurface
         ),
         shape = RoundedCornerShape(25.dp)
     )
@@ -104,19 +109,9 @@ fun CategoryFilters(categories: List<String>, selectedCategory: String, onCatego
     ) {
         items(categories) { category ->
             val isSelected = selectedCategory == category
-
-            // Colores dinámicos
-            val textColor = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface
-
             FilterChip(
                 onClick = { onCategorySelected(category) },
-                label = {
-                    Text(
-                        category,
-                        color = textColor,
-                        fontSize = 14.sp
-                    )
-                },
+                label = { Text(category) },
                 selected = isSelected,
                 colors = FilterChipDefaults.filterChipColors(
                     containerColor = MaterialTheme.colorScheme.surface,
@@ -126,119 +121,6 @@ fun CategoryFilters(categories: List<String>, selectedCategory: String, onCatego
                 ),
                 border = null
             )
-        }
-    }
-}
-
-@Composable
-fun PlacesList(
-    places: List<TouristPlace>,
-    onNavigateToDetail: (Int) -> Unit,
-    onToggleFavorite: (TouristPlace) -> Unit
-) {
-    LazyColumn(
-        verticalArrangement = Arrangement.spacedBy(16.dp),
-        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
-        modifier = Modifier.fillMaxSize()
-    ) {
-        items(places) { place ->
-            PlaceCard(
-                place = place,
-                onClick = { onNavigateToDetail(place.id) },
-                onFavoriteClick = { onToggleFavorite(place) }
-            )
-        }
-        item { Spacer(modifier = Modifier.height(80.dp)) }
-    }
-}
-
-@Composable
-fun PlaceCard(place: TouristPlace, onClick: () -> Unit, onFavoriteClick: () -> Unit) {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(120.dp)
-            .clickable { onClick() },
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surface
-        ),
-        shape = RoundedCornerShape(12.dp)
-    ) {
-        Row(modifier = Modifier.fillMaxSize()) {
-            // IMAGEN
-            Box(modifier = Modifier.width(120.dp).fillMaxHeight()) {
-                AsyncImage(
-                    model = place.imagen,
-                    contentDescription = place.name,
-                    modifier = Modifier.fillMaxSize(),
-                    contentScale = ContentScale.Crop
-                )
-            }
-
-            // INFO
-            Column(
-                modifier = Modifier
-                    .weight(1f)
-                    .fillMaxHeight()
-                    .padding(12.dp),
-                verticalArrangement = Arrangement.SpaceBetween
-            ) {
-                Column {
-                    Text(
-                        text = place.name,
-                        color = MaterialTheme.colorScheme.onSurface,
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.Bold
-                    )
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Text(
-                        text = place.description.take(50) + "...",
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
-                        fontSize = 12.sp,
-                        maxLines = 2
-                    )
-                }
-
-                // FOOTER (Precio + Acciones)
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Column {
-                        Text(
-                            text = "S/ ${place.precio}",
-                            color = MaterialTheme.colorScheme.tertiary, // Verde (definido en Theme)
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.Bold
-                        )
-                        Text(
-                            text = place.categoria,
-                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
-                            fontSize = 10.sp
-                        )
-                    }
-
-                    Row {
-                        IconButton(onClick = { /* Compartir */ }, modifier = Modifier.size(24.dp)) {
-                            Icon(
-                                Icons.Default.Share,
-                                "Share",
-                                tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
-                                modifier = Modifier.size(16.dp)
-                            )
-                        }
-                        IconButton(onClick = { onFavoriteClick() }, modifier = Modifier.size(24.dp)) {
-                            Icon(
-                                imageVector = if (place.isFavorite) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
-                                contentDescription = "Favorite",
-                                tint = if (place.isFavorite) Color.Red else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
-                                modifier = Modifier.size(16.dp)
-                            )
-                        }
-                    }
-                }
-            }
         }
     }
 }

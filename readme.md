@@ -8,4 +8,10 @@ Integrantes:
 
 
 ## Resumen ejecutivo del trabajo
+1) resumen ejecutivo del trabajo,
+2) descripción de las interfaces implementadas,
+3) propósito de cada interfaz y
+4) instrucciones para ejecutar el proyecto.
+
+
 
