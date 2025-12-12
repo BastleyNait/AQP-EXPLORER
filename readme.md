@@ -95,3 +95,8 @@ Para compilar y ejecutar **AQP-EXPLORER** en un entorno local, siga los siguient
 
 5.  **Verificación de Workers (Opcional):**
     * La aplicación utiliza `WorkManager` para notificaciones en segundo plano. Puede verificar los logs en el **Logcat** filtrando por la etiqueta `SYNC_TEST` o `ReservationWorker`.
+
+### Descarga del APK
+Si desea probar la aplicación directamente sin necesidad de compilar el código fuente, puede descargar el archivo instalable desde el siguiente enlace:
+
+* **[Descargar APK (app-debug.apk)](apk/app-debug.apk)**
