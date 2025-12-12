@@ -1,4 +1,4 @@
-package com.example.aqpexplorer.screens
+package com.example.aqpexplorer.presentation.screen.reservations
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -9,9 +9,9 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Info // Icono para historial
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.PlayArrow // Icono para próximos
+import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -23,38 +23,34 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.navigation.NavHostController
 import coil.compose.AsyncImage
 import com.example.aqpexplorer.data.Reservation
-import com.example.aqpexplorer.viewmodel.ReservationViewModel
 import java.text.SimpleDateFormat
 import java.util.*
 
 @Composable
 fun ReservationsScreen(
-    navController: NavHostController,
-    viewModel: ReservationViewModel = viewModel()
+    viewModel: ReservationViewModel,
+    onNavigateToDetail: (Int) -> Unit
 ) {
-    // Obtenemos todas las reservas
     val allReservations by viewModel.allReservations.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
 
-    // LÓGICA DE FILTRADO: Separamos en dos listas
+    // Filtrado local
     val activeReservations = remember(allReservations) {
-        allReservations.filter { it.estado == Reservation.STATUS_CONFIRMED }
+        allReservations.filter { it.estado == "Confirmada" } // Usar constante si tienes
     }
-
     val historyReservations = remember(allReservations) {
-        allReservations.filter { it.estado != Reservation.STATUS_CONFIRMED }
+        allReservations.filter { it.estado != "Confirmada" }
     }
 
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFF1A1A1A))
+            // USO DE TEMA
+            .background(MaterialTheme.colorScheme.background)
     ) {
-        // Header Principal
+        // HEADER
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -63,72 +59,62 @@ fun ReservationsScreen(
         ) {
             Text(
                 text = "Mis Reservas",
-                color = Color.White,
+                color = MaterialTheme.colorScheme.onBackground,
                 fontSize = 24.sp,
                 fontWeight = FontWeight.Bold
             )
         }
 
-        if (isLoading) {
+        if (isLoading && allReservations.isEmpty()) {
             Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator(color = Color(0xFF4CAF50)) // Verde corporativo
+                CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
             }
         } else if (allReservations.isEmpty()) {
-            // Estado vacío total
             EmptyStateMessage()
         } else {
             LazyColumn(
                 contentPadding = PaddingValues(bottom = 24.dp)
             ) {
-                // SECCIÓN 1: PRÓXIMOS VIAJES
+                // PRÓXIMOS
                 if (activeReservations.isNotEmpty()) {
                     item {
-                        SectionHeader("Próximos Viajes", Icons.Default.PlayArrow, Color(0xFF4CAF50))
+                        SectionHeader("Próximos Viajes", Icons.Default.PlayArrow, MaterialTheme.colorScheme.tertiary)
                     }
                     items(activeReservations) { reservation ->
-                        ReservationItemWrapper(reservation, viewModel, navController)
+                        ReservationCard(
+                            reservation = reservation,
+                            onCancel = { viewModel.cancelReservation(reservation.id) },
+                            onClick = { onNavigateToDetail(reservation.placeId) }
+                        )
                     }
                 } else {
-                    // Si no hay activos pero sí historial, mostramos un mensajito sutil
                     item {
-                        SectionHeader("Próximos Viajes", Icons.Default.PlayArrow, Color.Gray)
+                        SectionHeader("Próximos Viajes", Icons.Default.PlayArrow, MaterialTheme.colorScheme.onSurface.copy(alpha=0.5f))
                         Text(
                             "No tienes viajes programados",
-                            color = Color.Gray,
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
                             fontSize = 14.sp,
                             modifier = Modifier.padding(start = 16.dp, bottom = 16.dp)
                         )
                     }
                 }
 
-                // SECCIÓN 2: HISTORIAL / CANCELADOS
+                // HISTORIAL
                 if (historyReservations.isNotEmpty()) {
                     item {
                         Spacer(modifier = Modifier.height(16.dp))
-                        SectionHeader("Historial", Icons.Default.Info, Color.Gray)
+                        SectionHeader("Historial", Icons.Default.Info, MaterialTheme.colorScheme.onSurface.copy(alpha=0.5f))
                     }
                     items(historyReservations) { reservation ->
-                        ReservationItemWrapper(reservation, viewModel, navController)
+                        ReservationCard(
+                            reservation = reservation,
+                            onCancel = { viewModel.cancelReservation(reservation.id) },
+                            onClick = { onNavigateToDetail(reservation.placeId) }
+                        )
                     }
                 }
             }
         }
-    }
-}
-
-// Wrapper simple para no repetir código en el LazyColumn
-@Composable
-fun ReservationItemWrapper(
-    reservation: Reservation,
-    viewModel: ReservationViewModel,
-    navController: NavHostController
-) {
-    Box(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
-        ReservationCard(
-            reservation = reservation,
-            onCancel = { viewModel.cancelReservation(reservation.id) },
-            onClick = { navController.navigate("place_detail/${reservation.placeId}") }
-        )
     }
 }
 
@@ -149,7 +135,7 @@ fun SectionHeader(title: String, icon: ImageVector, iconTint: Color) {
         Spacer(modifier = Modifier.width(8.dp))
         Text(
             text = title,
-            color = Color.White,
+            color = MaterialTheme.colorScheme.onBackground,
             fontSize = 18.sp,
             fontWeight = FontWeight.SemiBold
         )
@@ -163,11 +149,15 @@ fun EmptyStateMessage() {
             Icon(
                 Icons.Default.DateRange,
                 contentDescription = null,
-                tint = Color.Gray,
+                tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f),
                 modifier = Modifier.size(64.dp)
             )
             Spacer(modifier = Modifier.height(16.dp))
-            Text("No tienes reservas aún", color = Color.Gray, fontSize = 16.sp)
+            Text(
+                "No tienes reservas aún",
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
+                fontSize = 16.sp
+            )
         }
     }
 }
@@ -178,83 +168,69 @@ fun ReservationCard(
     onCancel: () -> Unit,
     onClick: () -> Unit
 ) {
-    // Lógica visual basada en estado
-    val isCancelled = reservation.estado == Reservation.STATUS_CANCELLED
+    val isCancelled = reservation.estado == "Cancelada" // O usa constante
     val dateFormat = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
     val formattedDate = dateFormat.format(reservation.fecha.toDate())
 
-    // Colores dinámicos
-    val cardBackground = if (isCancelled) Color(0xFF251818) else Color(0xFF2A2A2A) // Un rojo muy oscuro vs gris oscuro
-    val statusColor = if (isCancelled) Color(0xFFFF5252) else Color(0xFF4CAF50)
-    val opacity = if (isCancelled) 0.7f else 1f // Hacemos las canceladas un poco más transparentes
+    // COLORES DINÁMICOS DEL TEMA
+    val cardContainer = if (isCancelled) MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.1f) else MaterialTheme.colorScheme.surface
+    val statusColor = if (isCancelled) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.tertiary
+    val textColor = MaterialTheme.colorScheme.onSurface
+    val subTextColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+    val opacity = if (isCancelled) 0.6f else 1f
 
     Card(
         modifier = Modifier
             .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 8.dp)
             .clickable { onClick() },
-        colors = CardDefaults.cardColors(containerColor = cardBackground),
-        shape = RoundedCornerShape(12.dp),
-        // Sutil borde rojo si está cancelada
-        border = if(isCancelled) null else null
+        colors = CardDefaults.cardColors(containerColor = cardContainer),
+        shape = RoundedCornerShape(12.dp)
     ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(0.dp) // Reset padding interno del row para que la imagen pegue al borde
-        ) {
-            // Imagen
-            Box(
-                modifier = Modifier
-                    .width(100.dp)
-                    .height(130.dp)
-            ) {
+        Row(modifier = Modifier.fillMaxWidth()) {
+            // IMAGEN
+            Box(modifier = Modifier.width(100.dp).height(130.dp)) {
                 AsyncImage(
                     model = reservation.placeImage,
                     contentDescription = reservation.placeName,
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .clip(RoundedCornerShape(topStart = 12.dp, bottomStart = 12.dp)), // Clip solo lado izquierdo
+                    modifier = Modifier.fillMaxSize().clip(RoundedCornerShape(topStart = 12.dp, bottomStart = 12.dp)),
                     contentScale = ContentScale.Crop,
-                    alpha = opacity // Imagen un poco apagada si es historial
+                    alpha = opacity
                 )
             }
 
-            // Contenido
+            // CONTENIDO
             Column(
                 modifier = Modifier
                     .weight(1f)
                     .padding(12.dp)
-                    .height(130.dp), // Forzamos altura para alinear verticalmente el contenido
+                    .height(130.dp),
                 verticalArrangement = Arrangement.SpaceBetween
             ) {
-                // Parte superior: Título y Datos
                 Column {
                     Text(
                         text = reservation.placeName,
-                        color = Color.White.copy(alpha = opacity),
+                        color = textColor.copy(alpha = opacity),
                         fontSize = 16.sp,
                         fontWeight = FontWeight.Bold,
                         maxLines = 1
                     )
                     Spacer(modifier = Modifier.height(8.dp))
 
-                    // Fecha
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Default.DateRange, null, tint = Color.Gray, modifier = Modifier.size(14.dp))
+                        Icon(Icons.Default.DateRange, null, tint = subTextColor, modifier = Modifier.size(14.dp))
                         Spacer(modifier = Modifier.width(4.dp))
-                        Text(formattedDate, color = Color.Gray, fontSize = 12.sp)
+                        Text(formattedDate, color = subTextColor, fontSize = 12.sp)
                     }
 
-                    // Personas
                     Spacer(modifier = Modifier.height(4.dp))
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Default.Person, null, tint = Color.Gray, modifier = Modifier.size(14.dp))
+                        Icon(Icons.Default.Person, null, tint = subTextColor, modifier = Modifier.size(14.dp))
                         Spacer(modifier = Modifier.width(4.dp))
-                        Text("${reservation.numPersonas} personas", color = Color.Gray, fontSize = 12.sp)
+                        Text("${reservation.numPersonas} personas", color = subTextColor, fontSize = 12.sp)
                     }
                 }
 
-                // Parte inferior: Precio y Acción/Estado
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
@@ -262,21 +238,16 @@ fun ReservationCard(
                 ) {
                     Text(
                         text = "S/ ${reservation.precioTotal}",
-                        color = if (isCancelled) Color.Gray else Color(0xFF4CAF50), // Precio gris si cancelado
+                        color = if (isCancelled) subTextColor else statusColor,
                         fontSize = 16.sp,
                         fontWeight = FontWeight.Bold
                     )
 
                     if (!isCancelled) {
-                        // Botón cancelar sutil
-                        IconButton(
-                            onClick = onCancel,
-                            modifier = Modifier.size(28.dp)
-                        ) {
-                            Icon(Icons.Default.Delete, "Cancelar", tint = Color(0xFFEF5350))
+                        IconButton(onClick = onCancel, modifier = Modifier.size(28.dp)) {
+                            Icon(Icons.Default.Delete, "Cancelar", tint = MaterialTheme.colorScheme.error)
                         }
                     } else {
-                        // Badge de estado
                         Surface(
                             color = statusColor.copy(alpha = 0.1f),
                             shape = RoundedCornerShape(4.dp),

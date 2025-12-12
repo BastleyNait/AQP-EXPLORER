@@ -8,6 +8,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
@@ -17,22 +18,27 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.navArgument
+import com.example.aqpexplorer.ExplorerApplication
 import com.example.aqpexplorer.data.repository.TouristPlaceRepository
+import com.example.aqpexplorer.presentation.screen.detail.PlaceDetailScreen
+import com.example.aqpexplorer.presentation.screen.detail.PlaceDetailViewModel
+import com.example.aqpexplorer.presentation.screen.favorites.FavoritesViewModel
+import com.example.aqpexplorer.presentation.screen.favorites.FavoritesScreen
 import com.example.aqpexplorer.presentation.screen.home.HomeScreen
 import com.example.aqpexplorer.presentation.screen.home.HomeViewModel
+import com.example.aqpexplorer.presentation.screen.reservations.ReservationViewModel
+import com.example.aqpexplorer.presentation.screen.reservations.ReservationsScreen
 import com.example.aqpexplorer.presentation.screen.search.SearchScreen
 import com.example.aqpexplorer.presentation.screen.search.SearchViewModel
+import com.example.aqpexplorer.presentation.screen.settings.SettingsScreen
+import com.example.aqpexplorer.presentation.screen.settings.SettingsViewModel
 
-import com.example.aqpexplorer.screens.FavoritesScreen // ELIMINAR
-import com.example.aqpexplorer.screens.ReservationsScreen // ELIMINAR
-import com.example.aqpexplorer.screens.SettingsScreen // ELIMINAR
-import com.example.aqpexplorer.screens.PlaceDetailScreen // ELIMINAR
 
 
 @Composable
 fun MainNavigation(
     navController: NavHostController,
-    repository: TouristPlaceRepository, // Recibimos el repo aunque aún no lo uses en las viejas
+    repository: TouristPlaceRepository,
     modifier: Modifier = Modifier
 ) {
     Scaffold(
@@ -77,20 +83,75 @@ fun MainNavigation(
                     }
                 )
             }
-            // --- RUTAS ANTIGUAS (LEGACY) ---
-            //composable("home") { HomeScreen(navController) }
-            //composable("search") { SearchScreen(navController) }
-            composable("favorites") { FavoritesScreen(navController) }
-            composable("reservations") { ReservationsScreen(navController) }
-            composable("settings") { SettingsScreen(navController) }
-
+            composable("favorites") {
+                val favViewModel: FavoritesViewModel = viewModel(
+                    factory = viewModelFactory {
+                        initializer {
+                            FavoritesViewModel(repository)
+                        }
+                    }
+                )
+                FavoritesScreen(
+                    viewModel = favViewModel,
+                    onNavigateToDetail = { placeId ->
+                        navController.navigate("place_detail/$placeId")
+                    }
+                )
+            }
+            composable("reservations") {
+                val resViewModel: ReservationViewModel = viewModel(
+                    factory = viewModelFactory {
+                        initializer {
+                            val app = (this[androidx.lifecycle.ViewModelProvider.AndroidViewModelFactory.APPLICATION_KEY] as com.example.aqpexplorer.ExplorerApplication)
+                            ReservationViewModel(app.reservationRepository)
+                        }
+                    }
+                )
+                ReservationsScreen (
+                    viewModel = resViewModel,
+                    onNavigateToDetail = { placeId ->
+                        navController.navigate("place_detail/$placeId")
+                    }
+                )
+            }
             composable(
                 route = "place_detail/{placeId}",
                 arguments = listOf(navArgument("placeId") { type = NavType.IntType })
             ) { backStackEntry ->
                 val placeId = backStackEntry.arguments?.getInt("placeId") ?: 0
-                PlaceDetailScreen(placeId, navController)
+                val detailViewModel: PlaceDetailViewModel = viewModel(
+                    factory = viewModelFactory {
+                        initializer {
+                            PlaceDetailViewModel(repository, placeId)
+                        }
+                    }
+                )
+                val context = LocalContext.current
+                val app = context.applicationContext as ExplorerApplication
+                val reservationViewModel: ReservationViewModel = viewModel(
+                    factory = viewModelFactory {
+                        initializer {
+                            ReservationViewModel(app.reservationRepository)
+                        }
+                    }
+                )
+                PlaceDetailScreen(
+                    navController = navController,
+                    viewModel = detailViewModel,
+                    reservationViewModel = reservationViewModel
+                )
             }
+            composable("settings") {
+                val settingsViewModel: SettingsViewModel = viewModel()
+
+                SettingsScreen(
+                    viewModel = settingsViewModel,
+                    onNavigateBack = {
+                        navController.popBackStack()
+                    }
+                )
+            }
+
         }
     }
 }
@@ -108,9 +169,9 @@ fun BottomNavigationBar(navController: NavHostController) {
     val currentRoute = navBackStackEntry?.destination?.route
 
     // Colores obtenidos del Tema
-    val barColor = MaterialTheme.colorScheme.surface // 0xFF2A2A2A
-    val selectedColor = MaterialTheme.colorScheme.primary // 0xFF007AFF
-    val indicatorColor = MaterialTheme.colorScheme.secondary // 0xFF3A3A3A
+    val barColor = MaterialTheme.colorScheme.surface
+    val selectedColor = MaterialTheme.colorScheme.primary
+    val indicatorColor = MaterialTheme.colorScheme.secondary
     val unselectedColor = com.example.aqpexplorer.presentation.theme.AqpGray
 
     NavigationBar(

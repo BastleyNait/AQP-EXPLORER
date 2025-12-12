@@ -6,6 +6,7 @@ import com.example.aqpexplorer.data.local.entity.ReservationEntity
 import com.example.aqpexplorer.data.remote.dto.ReservationDto
 import com.example.aqpexplorer.data.remote.dto.toEntity
 import com.google.firebase.firestore.FirebaseFirestore
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.tasks.await
 
 class ReservationRepository(
@@ -13,7 +14,11 @@ class ReservationRepository(
     private val firestore: FirebaseFirestore
 ) {
 
-    // 1. SINCRONIZAR: Nube -> Local
+    // --- 1. PROPIEDAD FLOW (Lo que pide el ViewModel) ---
+    // Esto conecta Room con el ViewModel. Si Room cambia, la UI se entera sola.
+    val allReservationsFlow: Flow<List<ReservationEntity>> = dao.getAllReservationsFlow()
+
+    // --- 2. SINCRONIZAR (Descargar de Nube) ---
     suspend fun syncReservations(userId: String) {
         try {
             val snapshot = firestore.collection("reservas")
@@ -21,12 +26,8 @@ class ReservationRepository(
                 .get()
                 .await()
 
-            // Usamos el DTO para convertir de forma segura
             val entities = snapshot.documents.mapNotNull { doc ->
-                // A. Convertir JSON a DTO
                 val dto = doc.toObject(ReservationDto::class.java)
-
-                // B. Convertir DTO a Entity (Pasando el ID del documento)
                 dto?.toEntity(doc.id)
             }
 
@@ -38,8 +39,44 @@ class ReservationRepository(
         }
     }
 
-    // 2. LEER LOCAL (Para el Worker y la UI Offline)
+    // --- 3. LEER LOCAL (Para Worker) ---
     suspend fun getConfirmedReservations(): List<ReservationEntity> {
         return dao.getConfirmedReservations()
+    }
+
+    // --- 4. CANCELAR RESERVA (Nuevo) ---
+    suspend fun cancelReservation(reservationId: String) {
+        try {
+            // A. Actualizar en Firebase (Nube)
+            firestore.collection("reservas")
+                .document(reservationId)
+                .update("estado", "Cancelada") // O usa una constante si tienes
+                .await()
+
+            // B. Actualizar en Room (Local)
+            // Al hacer esto, el 'allReservationsFlow' emitirá el cambio automáticamente
+            dao.updateStatus(reservationId, "Cancelada")
+
+        } catch (e: Exception) {
+            Log.e("REPO_RESERVA", "Error al cancelar: ${e.message}")
+            throw e // Re-lanzamos para que el ViewModel sepa que falló
+        }
+    }
+    // --- 5. CREAR RESERVA (NUEVO) ---
+    suspend fun createReservation(reservation: ReservationEntity) {
+        try {
+            // A. Guardar en Firebase
+            firestore.collection("reservas")
+                .document(reservation.id)
+                .set(reservation)
+                .await()
+
+            // B. Guardar en Room (Para verlo offline inmediatamente)
+            dao.insertReservations(listOf(reservation))
+
+        } catch (e: Exception) {
+            Log.e("REPO_RESERVA", "Error creando reserva: ${e.message}")
+            throw e
+        }
     }
 }

@@ -18,14 +18,10 @@ import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.navigation.compose.rememberNavController
 import androidx.work.*
-import com.example.aqpexplorer.data.FavoritesRepository // ELIMINAR
 import com.example.aqpexplorer.presentation.navigation.MainNavigation
 import com.example.aqpexplorer.utils.NotificationHelper
 import com.example.aqpexplorer.core.ReservationReminderWorker
 import com.example.aqpexplorer.presentation.theme.AQPEXPLORERTheme
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
 import java.util.concurrent.TimeUnit
 
 
@@ -40,15 +36,8 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-        // LEGACY (ELIMINAR)
-        FavoritesRepository.init(this)
-        CoroutineScope(Dispatchers.IO).launch { FavoritesRepository.syncWithFirebase() }
-
-        // NUEVO SISTEMA (Obtenemos solo el Repo)
         val appContainer = application as ExplorerApplication
         val repository = appContainer.repository
-        // ¡YA NO creamos viewModelFactory aquí!
-
         // Configuración
         NotificationHelper.createNotificationChannel(this)
         checkNotificationPermission()
@@ -57,12 +46,11 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             AQPEXPLORERTheme {
-                AQPExplorerApp(repository) // Pasamos el REPOSITORIO, no la fábrica
+                AQPExplorerApp(repository)
             }
         }
     }
 
-    // ... (Tus funciones de notificaciones siguen igual) ...
     private fun checkNotificationPermission() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             when {
