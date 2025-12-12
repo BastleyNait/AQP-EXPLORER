@@ -1,11 +1,11 @@
-package com.example.aqpexplorer.core
+package com.example.aqpexplorer.utils
 
 import android.content.Context
 import android.util.Log
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
 import com.example.aqpexplorer.ExplorerApplication
-import com.example.aqpexplorer.utils.NotificationHelper
+import com.example.aqpexplorer.data.local.entity.ReservationEntity
 import java.util.Calendar
 import java.util.concurrent.TimeUnit
 
@@ -41,7 +41,7 @@ class ReservationReminderWorker(
         }
     }
 
-    private fun checkUpcomingReservations(reservations: List<com.example.aqpexplorer.data.local.entity.ReservationEntity>) {
+    private fun checkUpcomingReservations(reservations: List<ReservationEntity>) {
 
         // 1. Obtenemos la fecha de HOY a medianoche (00:00:00)
         val today = Calendar.getInstance().apply {
