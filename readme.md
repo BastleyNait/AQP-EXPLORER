@@ -99,4 +99,5 @@ Para compilar y ejecutar **AQP-EXPLORER** en un entorno local, siga los siguient
 ### Descarga del APK
 Si desea probar la aplicación directamente sin necesidad de compilar el código fuente, puede descargar el archivo instalable desde el siguiente enlace:
 
-* **[Descargar APK (app-debug.apk)](apk/app-debug.apk)**
+* **[Descargar APK (app-debug.apk)](
+https://raw.githubusercontent.com/BastleyNait/AQP-EXPLORER/refs/heads/main/apk/app-debug.apk)**
