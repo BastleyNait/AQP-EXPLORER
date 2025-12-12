@@ -1,5 +1,8 @@
 package com.example.aqpexplorer.presentation.screen.settings
 
+import android.content.Context
+import android.content.Intent
+import android.provider.Settings
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -17,6 +20,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.aqpexplorer.core.NotificationHelper
@@ -26,96 +30,107 @@ fun SettingsScreen(
     viewModel: SettingsViewModel,
     onNavigateBack: () -> Unit
 ) {
+    val context = LocalContext.current
     val scrollState = rememberScrollState()
 
-    // Observamos el estado del ViewModel
+    // Observamos estados
     val dailyNotifications by viewModel.dailyNotifications.collectAsState()
     val travelAlerts by viewModel.travelAlerts.collectAsState()
+    val isDarkMode by viewModel.isDarkMode.collectAsState()
+
+    // Solo un diálogo: Créditos
+    var showCreditsDialog by remember { mutableStateOf(false) }
 
     Column(
         modifier = Modifier
             .fillMaxSize()
-            // USO DE TEMA
             .background(MaterialTheme.colorScheme.background)
             .verticalScroll(scrollState)
     ) {
-        // --- BOTÓN ATRÁS ---
-        IconButton(
-            onClick = { onNavigateBack() },
-            modifier = Modifier.padding(top = 16.dp, start = 8.dp)
+        // --- CABECERA ---
+        Row(
+            modifier = Modifier.padding(top = 16.dp, start = 8.dp, bottom = 8.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Icon(
-                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                contentDescription = "Volver",
-                tint = MaterialTheme.colorScheme.onBackground,
-                modifier = Modifier.size(24.dp)
+            IconButton(onClick = { onNavigateBack() }) {
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                    contentDescription = "Volver",
+                    tint = MaterialTheme.colorScheme.onBackground
+                )
+            }
+            Text(
+                text = "Configuración",
+                color = MaterialTheme.colorScheme.onBackground,
+                fontSize = 22.sp,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.padding(start = 8.dp)
             )
         }
 
-        // Header
-        SettingsHeader()
-
         Spacer(modifier = Modifier.height(16.dp))
 
-        // --- SECCIÓN NOTIFICACIONES ---
-        SettingsSectionTitle("Notificaciones")
+        // --- APARIENCIA ---
+        SettingsSectionTitle("Apariencia")
+        SettingItemWithSwitch(
+            icon = Icons.Default.Star,
+            title = "Modo Oscuro",
+            subtitle = if(isDarkMode) "Activado" else "Desactivado",
+            isChecked = isDarkMode,
+            onCheckedChange = { viewModel.toggleDarkMode(it) }
+        )
 
+        Spacer(modifier = Modifier.height(24.dp))
+
+        // --- NOTIFICACIONES ---
+        SettingsSectionTitle("Notificaciones")
         SettingItemWithSwitch(
             icon = Icons.Default.Notifications,
-            title = "Notificaciones diarias",
-            subtitle = "Recibir novedades al día",
+            title = "Novedades Diarias",
+            subtitle = "Promociones y nuevos lugares",
             isChecked = dailyNotifications,
             onCheckedChange = { viewModel.toggleDailyNotifications(it) }
         )
-
         SettingItemWithSwitch(
-            icon = Icons.Default.DateRange, // Icono alternativo
-            title = "Alertas de viaje",
-            subtitle = "Avisos sobre tus reservas",
+            icon = Icons.Default.DateRange,
+            title = "Alertas de Viaje",
+            subtitle = "Recordatorios de tus reservas",
             isChecked = travelAlerts,
             onCheckedChange = { viewModel.toggleTravelAlerts(it) }
         )
+        SettingItem(
+            icon = Icons.Default.Settings,
+            title = "Permisos del sistema",
+            subtitle = "Gestionar en Android",
+            onClick = { openAndroidSettings(context) }
+        )
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        // --- SECCIÓN GENERAL ---
+        // --- GENERAL (Sin Idioma) ---
         SettingsSectionTitle("General")
 
         SettingItem(
-            icon = Icons.Default.Settings,
-            title = "Idiomas",
-            subtitle = "Español (predeterminado)",
-            onClick = { }
-        )
-
-        SettingItem(
-            icon = Icons.Default.Info,
-            title = "Historial de actividades",
-            subtitle = "Ver actividades recientes",
-            onClick = { }
+            icon = Icons.Default.ThumbUp,
+            title = "Calificar AQP Explorer",
+            subtitle = "¡Danos 5 estrellas!",
+            onClick = { /* Link PlayStore */ }
         )
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        // --- SECCIÓN ACERCA DE ---
-        SettingsSectionTitle("Acerca de")
-
+        // --- INFORMACIÓN ---
+        SettingsSectionTitle("Información")
         SettingItem(
             icon = Icons.Default.Person,
             title = "Créditos",
-            subtitle = "Equipo de desarrollo AQP Explorer",
-            onClick = { }
+            subtitle = "Ver desarrolladores",
+            onClick = { showCreditsDialog = true }
         )
-
-        Spacer(modifier = Modifier.height(24.dp))
-
-        // --- PENDIENTES (Ejemplo visual) ---
-        SettingsSectionTitle("Notificaciones pendientes")
-
         SettingItem(
-            icon = Icons.Default.CheckCircle,
-            title = "Confirmación de reserva",
-            subtitle = "Tour Misti confirmado",
+            icon = Icons.Default.Build,
+            title = "Versión",
+            subtitle = "1.0.0",
             onClick = { }
         )
 
@@ -140,22 +155,60 @@ fun SettingsScreen(
             Text("Probar Notificación (Debug)")
         }
     }
+
+    // --- DIÁLOGO DE CRÉDITOS ---
+    if (showCreditsDialog) {
+        AlertDialog(
+            onDismissRequest = { showCreditsDialog = false },
+            title = { Text("AQP-EXPLORER", fontWeight = FontWeight.Bold) },
+            text = {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text("Desarrolladores:", fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(bottom = 8.dp))
+
+                    // LISTA DE INTEGRANTES
+                    val teamMembers = listOf(
+                        "Chirinos Negron, Sebastián Arley",
+                        "Cuadros Amanqui, Joe Jhonny",
+                        "Marrón Carcausto, Daniel Enrique",
+                        "Marrón Lope, Misael Josias",
+                        "Viza Cuti, Rodrigo Estefano"
+                    )
+
+                    teamMembers.forEach { name ->
+                        Text(
+                            text = name,
+                            fontSize = 14.sp,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.padding(vertical = 2.dp)
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Text(
+                        "Gracias por descargar nuestra app :)",
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { showCreditsDialog = false }) { Text("Cerrar") }
+            },
+            containerColor = MaterialTheme.colorScheme.surface
+        )
+    }
 }
 
-@Composable
-fun SettingsHeader() {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 8.dp),
-        horizontalArrangement = Arrangement.Center
-    ) {
-        Text(
-            text = "Configuración",
-            color = MaterialTheme.colorScheme.onBackground,
-            fontSize = 20.sp,
-            fontWeight = FontWeight.Bold
-        )
+// Funciones de utilidad y componentes (Igual que antes)
+fun openAndroidSettings(context: Context) {
+    try {
+        val intent = Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).apply {
+            putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName)
+        }
+        context.startActivity(intent)
+    } catch (e: Exception) {
+        val intent = Intent(Settings.ACTION_SETTINGS)
+        context.startActivity(intent)
     }
 }
 
@@ -164,110 +217,44 @@ fun SettingsSectionTitle(title: String) {
     Text(
         text = title,
         color = MaterialTheme.colorScheme.primary,
-        fontSize = 16.sp,
-        fontWeight = FontWeight.SemiBold,
+        fontSize = 14.sp,
+        fontWeight = FontWeight.Bold,
         modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
     )
 }
 
 @Composable
-fun SettingItem(
-    icon: ImageVector,
-    title: String,
-    subtitle: String,
-    onClick: () -> Unit
-) {
+fun SettingItem(icon: ImageVector, title: String, subtitle: String, onClick: () -> Unit) {
     Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable { onClick() }
-            .padding(vertical = 12.dp, horizontal = 16.dp),
+        modifier = Modifier.fillMaxWidth().clickable { onClick() }.padding(16.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Icon(
-            imageVector = icon,
-            contentDescription = title,
-            tint = MaterialTheme.colorScheme.onSurface,
-            modifier = Modifier.size(24.dp)
-        )
-
-        Spacer(modifier = Modifier.width(16.dp))
-
-        Column(modifier = Modifier.weight(1f)) {
-            Text(
-                text = title,
-                color = MaterialTheme.colorScheme.onSurface,
-                fontSize = 16.sp,
-                fontWeight = FontWeight.Medium
-            )
-
-            if (subtitle.isNotEmpty()) {
-                Text(
-                    text = subtitle,
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
-                    fontSize = 12.sp
-                )
-            }
+        Icon(icon, null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+        Spacer(Modifier.width(16.dp))
+        Column(Modifier.weight(1f)) {
+            Text(title, fontWeight = FontWeight.Medium, color = MaterialTheme.colorScheme.onSurface)
+            if(subtitle.isNotEmpty()) Text(subtitle, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha=0.6f))
         }
-
-        Icon(
-            imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
-            contentDescription = null,
-            tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f),
-            modifier = Modifier.size(20.dp)
-        )
+        Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, null, tint = MaterialTheme.colorScheme.onSurface.copy(alpha=0.3f))
     }
 }
 
 @Composable
-fun SettingItemWithSwitch(
-    icon: ImageVector,
-    title: String,
-    subtitle: String,
-    isChecked: Boolean,
-    onCheckedChange: (Boolean) -> Unit
-) {
+fun SettingItemWithSwitch(icon: ImageVector, title: String, subtitle: String, isChecked: Boolean, onCheckedChange: (Boolean) -> Unit) {
     Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 8.dp, horizontal = 16.dp),
+        modifier = Modifier.fillMaxWidth().padding(16.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Icon(
-            imageVector = icon,
-            contentDescription = title,
-            tint = MaterialTheme.colorScheme.onSurface,
-            modifier = Modifier.size(24.dp)
-        )
-
-        Spacer(modifier = Modifier.width(16.dp))
-
-        Column(modifier = Modifier.weight(1f)) {
-            Text(
-                text = title,
-                color = MaterialTheme.colorScheme.onSurface,
-                fontSize = 16.sp,
-                fontWeight = FontWeight.Medium
-            )
-
-            if (subtitle.isNotEmpty()) {
-                Text(
-                    text = subtitle,
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
-                    fontSize = 12.sp
-                )
-            }
+        Icon(icon, null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+        Spacer(Modifier.width(16.dp))
+        Column(Modifier.weight(1f)) {
+            Text(title, fontWeight = FontWeight.Medium, color = MaterialTheme.colorScheme.onSurface)
+            if(subtitle.isNotEmpty()) Text(subtitle, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha=0.6f))
         }
-
         Switch(
             checked = isChecked,
             onCheckedChange = onCheckedChange,
-            colors = SwitchDefaults.colors(
-                checkedThumbColor = MaterialTheme.colorScheme.onPrimary,
-                checkedTrackColor = MaterialTheme.colorScheme.primary,
-                uncheckedThumbColor = MaterialTheme.colorScheme.outline,
-                uncheckedTrackColor = MaterialTheme.colorScheme.surfaceVariant
-            )
+            colors = SwitchDefaults.colors(checkedTrackColor = MaterialTheme.colorScheme.primary)
         )
     }
 }

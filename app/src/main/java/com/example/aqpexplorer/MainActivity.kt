@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
@@ -21,6 +22,8 @@ import androidx.work.*
 import com.example.aqpexplorer.presentation.navigation.MainNavigation
 import com.example.aqpexplorer.core.NotificationHelper
 import com.example.aqpexplorer.core.ReservationReminderWorker
+import com.example.aqpexplorer.data.local.UserPreferences
+import com.example.aqpexplorer.presentation.screen.settings.ThemeManager
 import com.example.aqpexplorer.presentation.theme.AQPEXPLORERTheme
 import java.util.concurrent.TimeUnit
 
@@ -35,7 +38,8 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
+        val prefs = UserPreferences(this)
+        ThemeManager.isDarkMode.value = prefs.isDarkMode()
         val appContainer = application as ExplorerApplication
         val repository = appContainer.repository
         // Configuración
@@ -45,7 +49,10 @@ class MainActivity : ComponentActivity() {
 
         enableEdgeToEdge()
         setContent {
-            AQPEXPLORERTheme {
+            val isDarkTheme = remember { ThemeManager.isDarkMode }
+            AQPEXPLORERTheme (
+                darkTheme = isDarkTheme.value
+            ){
                 AQPExplorerApp(repository)
             }
         }

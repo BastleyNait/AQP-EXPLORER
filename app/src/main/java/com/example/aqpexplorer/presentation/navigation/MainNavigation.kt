@@ -6,6 +6,7 @@ import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
@@ -32,7 +33,7 @@ import com.example.aqpexplorer.presentation.screen.search.SearchScreen
 import com.example.aqpexplorer.presentation.screen.search.SearchViewModel
 import com.example.aqpexplorer.presentation.screen.settings.SettingsScreen
 import com.example.aqpexplorer.presentation.screen.settings.SettingsViewModel
-
+import com.example.aqpexplorer.data.local.UserPreferences
 
 
 @Composable
@@ -142,13 +143,21 @@ fun MainNavigation(
                 )
             }
             composable("settings") {
-                val settingsViewModel: SettingsViewModel = viewModel()
+                val context = LocalContext.current
+
+                val userPrefs = remember { UserPreferences(context) }
+
+                val settingsViewModel: SettingsViewModel = viewModel(
+                    factory = viewModelFactory {
+                        initializer {
+                            SettingsViewModel(userPrefs)
+                        }
+                    }
+                )
 
                 SettingsScreen(
                     viewModel = settingsViewModel,
-                    onNavigateBack = {
-                        navController.popBackStack()
-                    }
+                    onNavigateBack = { navController.popBackStack() }
                 )
             }
 
@@ -168,44 +177,39 @@ fun BottomNavigationBar(navController: NavHostController) {
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
 
-    // Colores obtenidos del Tema
-    val barColor = MaterialTheme.colorScheme.surface
-    val selectedColor = MaterialTheme.colorScheme.primary
-    val indicatorColor = MaterialTheme.colorScheme.secondary
-    val unselectedColor = com.example.aqpexplorer.presentation.theme.AqpGray
-
     NavigationBar(
-        containerColor = barColor,
+        // El color de la barra se adapta solo (Surface o SurfaceContainer)
+        containerColor = MaterialTheme.colorScheme.surface,
         contentColor = MaterialTheme.colorScheme.onSurface
     ) {
         items.forEach { item ->
+            val selected = currentRoute?.startsWith(item.route) == true
+
             NavigationBarItem(
                 icon = { Icon(item.icon, contentDescription = item.title) },
                 label = { Text(item.title) },
-                selected = currentRoute?.startsWith(item.route) == true,
+                selected = selected,
                 onClick = {
                     if (currentRoute != item.route) {
                         navController.navigate(item.route) {
-                            popUpTo(navController.graph.startDestinationId) {
-                                saveState = false
-                            }
+                            popUpTo(navController.graph.startDestinationId) { saveState = false }
                             launchSingleTop = true
                             restoreState = true
                         }
                     }
                 },
                 colors = NavigationBarItemDefaults.colors(
-                    selectedIconColor = selectedColor,
-                    selectedTextColor = selectedColor,
-                    unselectedIconColor = unselectedColor,
-                    unselectedTextColor = unselectedColor,
-                    indicatorColor = indicatorColor
+                    // --- COLORES INTELIGENTES (Material 3) ---
+                    selectedIconColor = MaterialTheme.colorScheme.onSecondaryContainer,
+                    indicatorColor = MaterialTheme.colorScheme.secondaryContainer,
+                    selectedTextColor = MaterialTheme.colorScheme.primary,
+                    unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                    unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             )
         }
     }
 }
-
 data class BottomNavItem(
     val route: String,
     val title: String,
