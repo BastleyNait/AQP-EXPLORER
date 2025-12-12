@@ -13,10 +13,13 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.aqpexplorer.core.NotificationHelper
 
 @Composable
 fun SettingsScreen(
@@ -117,6 +120,25 @@ fun SettingsScreen(
         )
 
         Spacer(modifier = Modifier.height(100.dp))
+
+        Spacer(modifier = Modifier.height(24.dp))
+
+        val context = LocalContext.current
+
+        OutlinedButton(
+            onClick = {
+                NotificationHelper.showReservationReminder(
+                    context,
+                    reservationId = "demo_id",
+                    placeName = "Monasterio (Demo)",
+                    daysUntil = 1 // Simula que es mañana
+                )
+            },
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+            colors = ButtonDefaults.outlinedButtonColors(contentColor = Color.Red) // Rojo para ubicarlo rápido
+        ) {
+            Text("Probar Notificación (Debug)")
+        }
     }
 }
 
