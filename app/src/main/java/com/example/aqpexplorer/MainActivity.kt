@@ -19,7 +19,7 @@ import androidx.core.content.ContextCompat
 import androidx.navigation.compose.rememberNavController
 import androidx.work.*
 import com.example.aqpexplorer.presentation.navigation.MainNavigation
-import com.example.aqpexplorer.utils.NotificationHelper
+import com.example.aqpexplorer.core.NotificationHelper
 import com.example.aqpexplorer.core.ReservationReminderWorker
 import com.example.aqpexplorer.presentation.theme.AQPEXPLORERTheme
 import java.util.concurrent.TimeUnit

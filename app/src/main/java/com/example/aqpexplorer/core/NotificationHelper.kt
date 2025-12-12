@@ -1,4 +1,4 @@
-package com.example.aqpexplorer.utils
+package com.example.aqpexplorer.core
 
 import android.app.NotificationChannel
 import android.app.NotificationManager
@@ -37,7 +37,7 @@ object NotificationHelper {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             if (context.checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS)
                 != android.content.pm.PackageManager.PERMISSION_GRANTED) {
-                return // No tenemos permiso, salir silenciosamente
+                return
             }
         }
 

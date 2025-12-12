@@ -25,6 +25,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import coil.compose.AsyncImage
+import com.example.aqpexplorer.presentation.components.TransportCard
 import com.example.aqpexplorer.presentation.screen.reservations.ReservationViewModel
 import java.text.SimpleDateFormat
 import java.util.*
@@ -138,11 +139,15 @@ fun PlaceDetailScreen(
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // AQUÍ IRÍAN TUS COMPONENTES (TransportCard, ServiceIconsRow)
-            // Los dejo comentados para que compile, descomenta si tienes los archivos
-            // TransportCard(...)
-            // ServiceIconsRow(...)
+            TransportCard(
+                transportInfo = currentPlace.transportInfo,
+                // Usamos lat/lng del objeto, con valores por defecto de seguridad (Plaza de Armas)
+                lat = currentPlace.location["latitude"] ?: -16.3988,
+                lng = currentPlace.location["longitude"] ?: -71.5369,
+                placeName = currentPlace.name
+            )
 
+            Spacer(modifier = Modifier.height(24.dp))
             Spacer(modifier = Modifier.height(24.dp))
 
             // FOOTER: PRECIO Y BOTONES

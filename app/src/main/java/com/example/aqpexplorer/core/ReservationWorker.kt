@@ -1,4 +1,4 @@
-package com.example.aqpexplorer.utils
+package com.example.aqpexplorer.core
 
 import android.content.Context
 import android.util.Log
@@ -21,16 +21,12 @@ class ReservationReminderWorker(
             val app = applicationContext as ExplorerApplication
             val repo = app.reservationRepository
 
-            // --- VALIDACIÓN DE INTERNET ---
             try {
-                // Este método suspende la ejecución hasta que Firebase responda (o falle)
                 repo.syncReservations("user123")
             } catch (e: Exception) {
-                // Si entra aquí, es probable que no haya internet o Firebase falló
                 Log.e("SYNC_TEST", "3. [Worker]  FALLÓ la sincronización: ${e.message}")
             }
 
-            // --- LECTURA LOCAL ---
             val reservations = repo.getConfirmedReservations()
             checkUpcomingReservations(reservations)
             Result.success()
